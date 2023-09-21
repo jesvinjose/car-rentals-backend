@@ -25,7 +25,7 @@ const userSchema=mongoose.Schema({
         type: String,
     },
     pinCode:{
-        type: String,
+        type: Number,
     },
     state:{
         type: String,

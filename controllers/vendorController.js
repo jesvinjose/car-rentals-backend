@@ -5,6 +5,7 @@ const NodeCache = require("node-cache");
 const vendorOtpCache = new NodeCache();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const cloudinary = require("cloudinary");
 const secretKey = "jesvinjose49";
 
 const registerVendor = async (req, res) => {
@@ -127,11 +128,11 @@ const verifyOTP = async (req, res) => {
       vendorOtpCache.del(emailId);
       console.log("Verify OTP Success");
       res.json({ message: "OTP sent successfully" });
-    }else {
+    } else {
       res.json({ message: "wrong OTP" });
     }
   } catch (error) {
-    res.json({message:"Error while verifying OTP:",error})
+    res.json({ message: "Error while verifying OTP:", error });
   }
 };
 
@@ -170,20 +171,23 @@ const verifyVendorLogin = async (req, res) => {
         {
           _id: vendor._id, // Include the MongoDB document ID
           emailId: vendor.emailId, // Include other user-specific data as needed
-          firstName:vendor.firstName
+          firstName: vendor.firstName,
         },
         secretKey,
         {
           expiresIn: "1h", // Set an expiration time for the token
         }
       );
-      console.log(vendorToken,"-------------Token------------------");
-      console.log(passwordMatch, "---passwordMatch----------");
-      return res.status(200).json({ 
-        message: "Valid Vendor", 
-        vendorToken:vendorToken,
-        vendorFirstName:vendor.firstName
-       });
+      // console.log(vendorToken,"-------------Token------------------");
+      // console.log(passwordMatch, "---passwordMatch----------");
+      return res.status(200).json({
+        message: "Valid Vendor",
+        vendorToken: vendorToken,
+        vendorFirstName: vendor.firstName,
+        vendorLastName: vendor.lastName,
+        vendorEmailId: vendor.emailId,
+        vendorId: vendor._id,
+      });
     } else {
       // console.log("Wrong Password");
       return res.json({ message: "Wrong password" });
@@ -194,9 +198,92 @@ const verifyVendorLogin = async (req, res) => {
   }
 };
 
+const getProfileDetails = async (req, res) => {
+  try {
+    const vendorId = req.params.vendorId;
+    const vendor = await Vendor.findById(vendorId);
+    // console.log("inside getProfileDetails");
 
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const vendorDetails = {
+      firstName: vendor.firstName,
+      lastName: vendor.lastName,
+      emailId: vendor.emailId,
+      mobileNumber: vendor.mobileNumber,
+      address: vendor.address,
+      pinCode: vendor.pinCode,
+      state: vendor.state,
+    };
+
+    // console.log(vendorDetails,"---------next line to vendordetails");
+    res.status(200).json({ message: "success", vendorDetails: vendorDetails });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(404).json({ message: "Internal server error" });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    console.log("inside updateProfile");
+    const { vendorId } = req.params;
+    console.log(vendorId, "from params");
+    const {
+      firstName,
+      lastName,
+      password,
+      mobileNumber,
+      address,
+      pinCode,
+      state,
+      aadharNumber,
+      aadharFrontImage,
+      aadharBackImage,
+    } = req.body;
+    console.log(req.body, "--req.body........");
+    let aadharfrontimage = await cloudinary.v2.uploader.upload(aadharFrontImage);
+    let aadharfrontimageurl = aadharfrontimage.url;
+    // console.log(aadharfrontimageurl, "---------url-----------");
+
+    let aadharbackimage = await cloudinary.v2.uploader.upload(aadharBackImage);
+    let aadharbackimageurl = aadharbackimage.url;
+    // console.log(aadharbackimageurl, "------aadharbackimageurl------------");
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      vendorId,
+      {
+        firstName,
+        lastName,
+        password,
+        mobileNumber,
+        address,
+        pinCode,
+        state,
+        aadharNumber,
+        aadharFrontImage:aadharfrontimageurl,
+        aadharBackImage:aadharbackimageurl
+      },
+      { new: true }
+    );
+
+    // console.log(updatedVendor, "--------final check-------");
+    if (!updatedVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "Profile updated successfully", vendor: updatedVendor });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 module.exports = {
   registerVendor,
   verifyOTP,
-  verifyVendorLogin
+  verifyVendorLogin,
+  getProfileDetails,
+  updateProfile,
 };

@@ -30,6 +30,15 @@ const vendorSchema=mongoose.Schema({
     state:{
         type: String,
     },
+    aadharNumber:{
+        type: Number
+    },
+    aadharFrontImage:{
+        type:String,
+    },
+    aadharBackImage:{
+        type:String,
+    },
     walletBalance:{
         type:Number,
         default:0

@@ -5,6 +5,8 @@ const NodeCache = require("node-cache");
 const otpCache = new NodeCache();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const cloudinary = require("cloudinary");
+
 const secretKey = "jesvinjose";
 const registerUser = async (req, res) => {
   const {
@@ -170,20 +172,24 @@ const verifyUserLogin = async (req, res) => {
         {
           _id: user._id, // Include the MongoDB document ID
           emailId: user.emailId, // Include other user-specific data as needed
-          firstName:user.firstName
+          firstName: user.firstName,
         },
         secretKey,
         {
           expiresIn: "1h", // Set an expiration time for the token
         }
       );
-      console.log(token,"-------------Token------------------");
-      console.log(passwordMatch, "---passwordMatch----------");
-      return res.status(200).json({ 
-        message: "Valid User", 
-        token:token,
-        firstName:user.firstName
-       });
+      // res.cookie('userToken', user._id, { maxAge: 3600000 });
+      // console.log(token,"-------------Token------------------");
+      // console.log(passwordMatch, "---passwordMatch----------");
+      return res.status(200).json({
+        message: "Valid User",
+        token: token,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailId: user.emailId,
+        userId: user._id,
+      });
     } else {
       // console.log("Wrong Password");
       return res.json({ message: "Wrong password" });
@@ -194,8 +200,218 @@ const verifyUserLogin = async (req, res) => {
   }
 };
 
+const getProfileDetails = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userDetails = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailId: user.emailId,
+      mobileNumber: user.mobileNumber,
+      address: user.address,
+      pinCode: user.pinCode,
+      state: user.state,
+      aadharNumber: user.aadharNumber,
+      dlNumber: user.dlNumber,
+      aadharFrontImage: user.aadharFrontImage,
+      aadharBackImage: user.aadharBackImage,
+      dlFrontImage: user.dlFrontImage,
+      dlBackImage: user.dlBackImage,
+    };
+
+    // console.log(userDetails,"inside getProfileDetails");
+
+    res.status(200).json({ message: "success", userDetails: userDetails });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(404).json({ message: "Internal server error" });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  console.log(req.body, "------------inside update profile");
+  const { userId } = req.params;
+  console.log(userId, "from params");
+  console.log();
+  const {
+    firstName,
+    lastName,
+    password,
+    mobileNumber,
+    address,
+    pinCode,
+    state,
+    aadharNumber,
+    dlNumber,
+    aadharFrontImage,
+    aadharBackImage,
+    dlFrontImage,
+    dlBackImage,
+  } = req.body;
+  console.log(req.body, "-----------req.body..............");
+  try {
+    let aadharfrontimage = await cloudinary.v2.uploader.upload(
+      aadharFrontImage
+    );
+    let aadharfrontimageurl = aadharfrontimage.url;
+    // console.log(aadharfrontimageurl, "---------url-----------");
+
+    let aadharbackimage = await cloudinary.v2.uploader.upload(aadharBackImage);
+    let aadharbackimageurl = aadharbackimage.url;
+    // console.log(aadharbackimageurl, "------aadharbackimageurl------------");
+
+    let dlfrontimage = await cloudinary.v2.uploader.upload(dlFrontImage);
+    let dlfrontimageurl = dlfrontimage.url;
+
+    let dlbackimage = await cloudinary.v2.uploader.upload(dlBackImage);
+    let dlbackimageurl = dlbackimage.url;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        firstName,
+        lastName,
+        password,
+        mobileNumber,
+        address,
+        pinCode,
+        state,
+        aadharNumber,
+        dlNumber,
+        aadharFrontImage: aadharfrontimageurl,
+        aadharBackImage: aadharbackimageurl,
+        dlFrontImage: dlfrontimageurl,
+        dlBackImage: dlbackimageurl,
+      },
+      { new: true }
+    );
+
+    // console.log(updatedUser, "--------final check-------");
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res
+      .status(200)
+      .json({ message: "Profile updated successfully", user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  // console.log("inside reset Password");
+  console.log(req.body);
+  const { emailId } = req.body;
+  const user = await User.findOne({ emailId: emailId });
+  if (user) {
+    // console.log("Does Email exists-----?" + emailExist);
+    let generatedOtp = generateOTP();
+    otpCache.set(emailId, generatedOtp, 60);
+    sendOtpMail(emailId, generatedOtp);
+    console.log(generatedOtp, "-------otp here");
+    // Send the OTP in the response to the client
+    res.json({ message: "OTP sent successfully", otp: generatedOtp });
+    // console.log(generatedOtp, ">>>>");
+  } else {
+    res.json({ message: "This User doesnt exists" });
+  }
+};
+
+const verifyOTP4PasswordReset = async (req, res) => {
+  // console.log("inside verifyOTP4PasswordReset ");
+  try {
+    const { otp, emailId } = req.body;
+    const cachedOTP = otpCache.get(emailId);
+    // console.log(cachedOTP, "--------cachedOTP-----------");
+    // console.log(otp, "------------otp---------------");
+    if (cachedOTP == otp) {
+      // console.log(otp, "----------otp---------");
+      // console.log(cachedOTP, "----------inside checking---------");
+      // const user = await User.findOne({ emailId: emailId });
+      res.json({ message: "OTP sent successfully" });
+    } else {
+      res.status(400).json({ message: "wrong OTP" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+confirmNewPassword = async (req, res) => {
+  console.log("inside confirmNewPassword");
+  const { emailId, password, confirmPassword } = req.body;
+  // console.log(emailId);
+  const user = await User.findOne({ emailId: emailId });
+  // Validate password
+  if (!password || password.length < 8) {
+    return res.json({
+      message: "Password should be at least 8 characters long",
+    });
+  }
+
+  // Validate confirm password
+  if (password !== confirmPassword) {
+    return res.json({ message: "Passwords do not match" });
+  }
+
+  const securedPassword = await securePassword(password);
+  user.password = securedPassword;
+  await user.save();
+  console.log(user);
+  otpCache.del(emailId);
+  return res.json({ message: "Password Reset successfully" });
+};
+
+const googleLogin = async (req, res) => {
+  try {
+    console.log("googleLogin");
+    const { email } = req.body;
+    console.log(email);
+    const user = await User.findOne({ emailId: email });
+    // console.log(user, "----user----------");
+    if (user) {
+      console.log("inside user");
+      const token = jwt.sign(
+        {
+          _id: user._id, // Include the MongoDB document ID
+          emailId: user.emailId, // Include other user-specific data as needed
+          firstName: user.firstName,
+        },
+        secretKey,
+        {
+          expiresIn: "1h", // Set an expiration time for the token
+        }
+      );
+      return res.json({
+        message: "Google Login",
+        token: token,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailId: user.emailId,
+        userId: user._id,
+      });
+    } else {
+      return res.json({ message: "Invalid User" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   registerUser,
   verifyOTP,
   verifyUserLogin,
+  getProfileDetails,
+  updateProfile,
+  resetPassword,
+  verifyOTP4PasswordReset,
+  confirmNewPassword,
+  googleLogin,
 };
