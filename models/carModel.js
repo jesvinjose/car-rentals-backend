@@ -1,20 +1,16 @@
 const mongoose=require("mongoose")
 
 const carSchema=new mongoose.Schema({
-    deliveryHub:{
+    modelName:{
         type:String,
         required:true
     },
-    modelName:{
+    deliveryHub:{
         type:String,
         required:true
     },
     fuelCapacity:{
         type:Number,
-        required:true
-    },
-    gearBox:{
-        type:String,
         required:true
     },
     seatNumber:{
@@ -23,6 +19,10 @@ const carSchema=new mongoose.Schema({
     },
     mileage:{
         type:Number,
+        required:true
+    },
+    gearBoxType:{
+        type:String,
         required:true
     },
     fuelType:{
@@ -48,17 +48,37 @@ const carSchema=new mongoose.Schema({
     vendorId:{
         type:mongoose.Types.ObjectId,
         ref:'Vendor',
+    },
+    carTypeName:{
+        type:String,
+        required:true,
+    },
+    hourlyRentalRate:{
+        type:Number,
         required:true
     },
-    carId:{
-        type:mongoose.Types.ObjectId,
-        ref:'CarType',
+    dailyRentalRate:{
+        type:Number,
         required:true
-    }
+    },
+    monthlyRentalRate:{
+        type:Number,
+        required:true
+    },
+    blockStatus:{
+        type:Boolean,
+        default:false
+    },
+    verificationStatus: {
+        type: String,
+        enum: ["pending", "Approved", "Rejected"],
+        default: "pending",
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
 }) 
 
 const Car=mongoose.model('Car',carSchema);
 module.exports=Car;
-
-// const User = mongoose.model('User', userSchema);
-// module.exports = User;

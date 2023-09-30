@@ -9,7 +9,11 @@ const carouselSchema=new mongoose.Schema({
         type:String,
         required:true
     },
-    isDisabled:{
+    carouselDescription:{
+        type:String,
+        required:true
+    },
+    blockStatus:{
         type:Boolean,
         default:false
     }

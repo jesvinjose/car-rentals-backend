@@ -4,7 +4,11 @@ const Admin = require("../models/adminModel");
 const User = require("../models/userModel");
 const Vendor = require("../models/vendorModel");
 const secretKey = "jesvin";
-const CarType=require("../models/carTypeModel");
+// const CarType = require("../models/carTypeModel");
+const Car = require("../models/carModel");
+const Carousel = require("../models/carouselModel");
+const cloudinary = require("cloudinary");
+
 const adminLogin = async (req, res) => {
   // console.log("hi");
 
@@ -79,22 +83,47 @@ const loadAdminHome = (req, res) => {
   }
 };
 
-const Carousel = require("../models/carouselModel");
-
 // Function to add a new carousel
 const addCarousel = async (req, res) => {
   try {
-    const { carouselImages, carouselName, isDisabled } = req.body;
+    console.log(req.body, "------------------");
+    console.log(req.files, "--------------");
+    const { carouselName, carouselDescription } = req.body;
+    // const carouselImages = req.files['carouselImages']; // Correctly access carouselImages
+    // console.log(carouselImages, ";;;;;;;;;;;;;;;;;;;;;;;;");
+    // const carouselImages = files.filter(
+    //   (file) => file.fieldname === "carouselImages"
+    // );
+    // console.log(carouselImages,"---------;;;;;;;;;;;");
 
-    // Create a new carousel instance
+    const imageUrls = [];
+
+    // Upload each carousel image to Cloudinary and store the URLs
+    for (const image of req.files) {
+      try {
+        const result = await cloudinary.uploader.upload(image.path);
+        imageUrls.push(result.secure_url);
+      } catch (error) {
+        console.error("Error uploading image to Cloudinary:", error);
+        // Handle error appropriately, e.g., send an error response
+        return res
+          .status(500)
+          .json({ error: "Error uploading image to Cloudinary" });
+      }
+    }
+    console.log(imageUrls, "---------------");
+
+    // Create a new carousel instance with image URLs
     const newCarousel = new Carousel({
-      carouselImages,
+      carouselImages: imageUrls,
       carouselName,
-      isDisabled,
+      carouselDescription,
     });
 
+    console.log(newCarousel, "---------newCarousel----------");
     // Save the new carousel to the database
     await newCarousel.save();
+    console.log(imageUrls, "imageUrls----------");
 
     res.status(201).json(newCarousel);
   } catch (error) {
@@ -112,7 +141,7 @@ const unblockUser = async (req, res) => {
 
 const blockUser = async (req, res) => {
   // console.log("block")
-  console.log(req.params.id, "-------from params----------");
+  // console.log(req.params.id, "-------from params----------");
   const user = await User.findByIdAndUpdate(req.params.id);
   user.blockStatus = true;
   await user.save();
@@ -120,7 +149,7 @@ const blockUser = async (req, res) => {
 };
 
 const unblockVendor = async (req, res) => {
-  console.log("inside unblock");
+  // console.log("inside unblock");
   const vendor = await Vendor.findByIdAndUpdate(req.params.id);
   vendor.blockStatus = false;
   await vendor.save();
@@ -128,7 +157,7 @@ const unblockVendor = async (req, res) => {
 };
 
 const blockVendor = async (req, res) => {
-  console.log("inside block");
+  // console.log("inside block");
   console.log(req.params.id, "this is the id of vendor");
   const vendor = await Vendor.findByIdAndUpdate(req.params.id);
   vendor.blockStatus = true;
@@ -172,54 +201,157 @@ const rejectVendor = async (req, res) => {
   res.json({ message: "Vendor Account is Rejected" });
 };
 
-const registerCarType = async (req, res) => {
-  console.log("inside registerCarType function ");
-  const { carTypeName, hourlyRentalRate, dailyRentalRate, monthlyRentalRate } =
-    req.body;
-  console.log(carTypeName);
-  console.log(req.body, ">>>>>>>>>>>>>>>>>>>");
-  // Simple validation
-  if (
-    !carTypeName ||
-    !hourlyRentalRate ||
-    !dailyRentalRate ||
-    !monthlyRentalRate
-  ) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
+// const registerCarType = async (req, res) => {
+//   console.log("inside registerCarType function ");
+//   const { carTypeName, hourlyRentalRate, dailyRentalRate, monthlyRentalRate } =
+//     req.body;
+//   console.log(carTypeName);
+//   console.log(req.body, ">>>>>>>>>>>>>>>>>>>");
+// Simple validation
+//   if ( !carTypeName ||  !hourlyRentalRate ||    !dailyRentalRate ||    !monthlyRentalRate
+//   ) {
+//     return res.status(400).json({ message: "All fields are required." });
+//   }
 
-  // Validate numeric rental rates
-  if (
-    isNaN(hourlyRentalRate) ||
-    isNaN(dailyRentalRate) ||
-    isNaN(monthlyRentalRate)
-  ) {
-    return res.status(400).json({ message: "Rental rates must be numeric." });
-  }
-  try {
-    const carType = new CarType({
-      carTypeName,
-      hourlyRentalRate,
-      dailyRentalRate,
-      monthlyRentalRate,
-      verificationStatus: 'pending',
-      blockStatus: false
-    });
+// Validate numeric rental rates
+//   if (  isNaN(hourlyRentalRate) ||  isNaN(dailyRentalRate) ||    isNaN(monthlyRentalRate) ) {
+//     return res.status(400).json({ message: "Rental rates must be numeric." });
+//   }
+//   try {
+//     const carType = new CarType({
+//       carTypeName,
+//       hourlyRentalRate,
+//       dailyRentalRate,
+//       monthlyRentalRate,
+//       blockStatus: false,
+//     });
 
-    await carType.save();
-    console.log(carType,"-----------new car type-----------------");
-    res.status(201).json({ message: 'Car type registered successfully.' });
-  } catch (error) {
-    console.error('Error registering car type:', error);
-    res.status(500).json({ message: 'Server error.' });
-  }
+//     await carType.save();
+//     console.log(carType, "-----------new car type-----------------");
+//     res.status(201).json({ message: "Car type registered successfully." });
+//   } catch (error) {
+//     console.error("Error registering car type:", error);
+//     res.status(500).json({ message: "Server error." });
+//   }
+// };
+
+// const blockCarType = async (req, res) => {
+//   const id = req.params.id;
+//   console.log(id, "from block Car Type");
+//   const carType = await CarType.findById(id);
+//   carType.blockStatus = false;
+//   await carType.save();
+//   res.json({ message: "Car Type blocked successfully" });
+// };
+
+// const getCartypeslist = async (req, res) => {
+//   const cartypesList = await CarType.find({});
+// console.log(cartypesList);
+//   res.json(cartypesList);
+// };
+
+// const unblockCarType = async (req, res) => {
+//   const id = req.params.id;
+//   console.log(id,"from unblock Car Type");
+//   const carType = await CarType.findById(id);
+//   carType.blockStatus = true;
+//   await carType.save();
+//   res.json({ message: "Car Type unblocked successfully" });
+// };
+
+// const editCarType = async (req, res) => {
+//   const id = req.params.id;
+//   console.log(id, "inside editCarType");
+
+//   console.log(req.body, "from body");
+//   const { carTypeName, hourlyRentalRate, dailyRentalRate, monthlyRentalRate } =
+//     req.body;
+//   const updatedCarType = await CarType.findByIdAndUpdate(
+//     id,
+//     {
+//       carTypeName,
+//       hourlyRentalRate,
+//       dailyRentalRate,
+//       monthlyRentalRate,
+//     },
+//     { new: true }
+//   );
+//   if (!updatedCarType) {
+//     return res.status(404).json({ message: "Car Type not found" });
+//   } else {
+//     return res.status(200).json({
+//       message: "CarType updated successfully",
+//       cartype: updatedCarType,
+//     });
+//   }
+// };
+
+const getCarsList = async (req, res) => {
+  // console.log("inside getCarsList");
+  const cars = await Car.find({});
+  res.json(cars);
 };
 
-const getCartypeslist=async(req,res)=>{
-  const cartypesList = await CarType.find({});
-  // console.log(cartypesList);
-  res.json(cartypesList);
-}
+const blockCar = async (req, res) => {
+  const id = req.params.id;
+  console.log(id, "id in blockCar");
+  const car = await Car.findById(id);
+  car.blockStatus = true;
+  await car.save();
+  res.json({ message: "Car blocked successfully" });
+};
+
+const unblockCar = async (req, res) => {
+  const id = req.params.id;
+  // console.log(id,"id in unblockCar");
+  const car = await Car.findById(id);
+  car.blockStatus = false;
+  await car.save();
+  res.json({ message: "Car unblocked successfully" });
+};
+
+const acceptCar = async (req, res) => {
+  const id = req.params.id;
+  console.log(id, "id in acceptCar");
+  const car = await Car.findById(id);
+  car.verificationStatus = "Approved";
+  await car.save();
+  res.json({ message: "Car is Accepted" });
+};
+
+const rejectCar = async (req, res) => {
+  const id = req.params.id;
+  console.log(id, "id in rejectCar");
+  const car = await Car.findById(id);
+  car.verificationStatus = "Rejected";
+  await car.save();
+  res.json({ message: "Car is Rejected" });
+};
+
+const getVendorName = async (req, res) => {
+  const id = req.params.id;
+  // console.log(id,"id in getVendorName");
+  const vendor = await Vendor.findOne({ _id: id });
+  // console.log(vendor);
+  res.json(vendor);
+};
+
+const getCarouselList = async (req, res) => {
+  const carousel = await Carousel.find({ blockStatus: false });
+  console.log(carousel);
+  return res.json(carousel);
+};
+
+const deleteCarousel = async (req, res) => {
+  const carouselId = req.params.carouselId;
+  try {
+    // Find the carousel by ID and remove it
+    await Carousel.findByIdAndRemove(carouselId);
+    res.status(200).json({ message: "Carousel deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Could not delete carousel" });
+  }
+};
 
 module.exports = {
   addCarousel,
@@ -235,6 +367,17 @@ module.exports = {
   rejectUser,
   acceptVendor,
   rejectVendor,
-  registerCarType,
-  getCartypeslist
+  // registerCarType,
+  // getCartypeslist,
+  // blockCarType,
+  // unblockCarType,
+  // editCarType,
+  getCarsList,
+  blockCar,
+  unblockCar,
+  acceptCar,
+  rejectCar,
+  getVendorName,
+  getCarouselList,
+  deleteCarousel,
 };

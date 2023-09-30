@@ -7,6 +7,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("cloudinary");
 const secretKey = "jesvinjose49";
+const Car = require("../models/carModel");
+const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Types;
+// const CarType = require("../models/carTypeModel");
 
 const registerVendor = async (req, res) => {
   try {
@@ -149,8 +153,9 @@ const securePassword = async (password) => {
 const verifyVendorLogin = async (req, res) => {
   try {
     const { emailId, password } = req.body;
-    const vendor = await Vendor.findOne({ emailId: emailId }); // Use findOne to get a single vendor document
 
+    const vendor = await Vendor.findOne({ emailId: emailId }); // Use findOne to get a single vendor document
+    // console.log(vendor,"------vendor----------");
     if (!vendor) {
       console.log("Vendor is not registered, please register now");
       return res.json({
@@ -158,7 +163,8 @@ const verifyVendorLogin = async (req, res) => {
       });
     }
 
-    if (vendor.blockStatus === true) {
+    if (vendor.blockStatus=== true) {
+      // console.log("blockStatus");
       return res.json({
         message: "Vendor is blocked, contact jesvinjose49@gmail.com",
       });
@@ -200,10 +206,15 @@ const verifyVendorLogin = async (req, res) => {
 
 const getProfileDetails = async (req, res) => {
   try {
+    // console.log("getProfileDetails");
     const vendorId = req.params.vendorId;
-    const vendor = await Vendor.findById(vendorId);
+    const objectId = new ObjectId(vendorId);
+    // console.log(objectId, "----------objectId------------");
+    const vendor = await Vendor.findById(objectId);
+
     // console.log("inside getProfileDetails");
 
+    // console.log(vendor._id, "vendor>>>>>>vvvvvvvvvvvvvv>>>>>>>>>>>>>>>");
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
@@ -216,21 +227,29 @@ const getProfileDetails = async (req, res) => {
       address: vendor.address,
       pinCode: vendor.pinCode,
       state: vendor.state,
+      aadharNumber: vendor.aadharNumber,
+      aadharFrontImage: vendor.aadharFrontImage,
+      aadharBackImage: vendor.aadharBackImage,
+      walletBalance: vendor.walletBalance,
+      isVerified: vendor.isVerified,
+      blockStatus: vendor.blockStatus,
+      createdAt: vendor.createdAt,
+      verificationStatus: vendor.verificationStatus,
     };
 
-    // console.log(vendorDetails,"---------next line to vendordetails");
+    // console.log(vendorDetails, "---------next line to vendordetails");
     res.status(200).json({ message: "success", vendorDetails: vendorDetails });
   } catch (error) {
-    console.error("Error fetching user details:", error);
+    console.error("Error fetching jesvin details:", error.message);
     res.status(404).json({ message: "Internal server error" });
   }
 };
 
 const updateProfile = async (req, res) => {
   try {
-    console.log("inside updateProfile");
+    // console.log("inside updateProfile");
     const { vendorId } = req.params;
-    console.log(vendorId, "from params");
+    // console.log(vendorId, "from params");
     const {
       firstName,
       lastName,
@@ -243,8 +262,10 @@ const updateProfile = async (req, res) => {
       aadharFrontImage,
       aadharBackImage,
     } = req.body;
-    console.log(req.body, "--req.body........");
-    let aadharfrontimage = await cloudinary.v2.uploader.upload(aadharFrontImage);
+    // console.log(req.body, "--req.body........");
+    let aadharfrontimage = await cloudinary.v2.uploader.upload(
+      aadharFrontImage
+    );
     let aadharfrontimageurl = aadharfrontimage.url;
     // console.log(aadharfrontimageurl, "---------url-----------");
 
@@ -262,8 +283,8 @@ const updateProfile = async (req, res) => {
         pinCode,
         state,
         aadharNumber,
-        aadharFrontImage:aadharfrontimageurl,
-        aadharBackImage:aadharbackimageurl
+        aadharFrontImage: aadharfrontimageurl,
+        aadharBackImage: aadharbackimageurl,
       },
       { new: true }
     );
@@ -280,10 +301,264 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+const getCarsList = async (req, res) => {
+  const vendorId=req.params.vendorId;
+  // const objectId=new ObjectId(req.params.vendorId)
+  // console.log("Hello getCarslist");
+  // console.log(vendorId);
+  const carsList = await Car.find({vendorId:vendorId});
+  // // const carsList = await Car.find();
+  // console.log(carsList, "----------carslist---------");
+  res.json(carsList);
+};
+
+// const loadCarTypes = async (req, res) => {
+  // console.log("enter here");
+//   try {
+//     const carTypes = await CarType.find();
+    // console.log(carTypes, "-----carTypes------");
+//     res.json(carTypes);
+//   } catch (error) {
+//     console.log(error, 11111111111);
+//   }
+// };
+
+const editCarDetails = async (req, res) => {
+  // console.log("inside editCarDetails");
+  const id = req.params.id;
+  // console.log(id,"from editCarDetails");
+  const {
+    modelName,
+    deliveryHub,
+    fuelCapacity,
+    seatNumber,
+    mileage,
+    gearBoxType,
+    fuelType,
+    description,
+    rcNumber,
+    rcImage,
+    carImage,
+    carTypeName,
+    hourlyRentalRate,
+    dailyRentalRate,
+    monthlyRentalRate,
+  } = req.body;
+  // console.log(req.body);
+  let rcimage = await cloudinary.v2.uploader.upload(rcImage);
+  let rcimageurl = rcimage.url;
+  let carimage = await cloudinary.v2.uploader.upload(carImage);
+  let carimageurl = carimage.url;
+  await Car.findByIdAndUpdate(id, {
+    modelName,
+    deliveryHub,
+    fuelCapacity,
+    seatNumber,
+    mileage,
+    gearBoxType,
+    fuelType,
+    description,
+    rcNumber,
+    rcImage: rcimageurl,
+    carImage: carimageurl,
+    carTypeName,
+    hourlyRentalRate,
+    dailyRentalRate,
+    monthlyRentalRate,
+    verificationStatus:"pending"
+  });
+  res.json({ message: "Car updated successfully" });
+};
+
+const registerCar = async (req, res) => {
+  console.log("Register car");
+  try {
+    const {
+      modelName,
+      deliveryHub,
+      fuelCapacity,
+      selectedGearBox,
+      seatNumber,
+      mileage,
+      selectedFuelType,
+      description,
+      rcNumber,
+      rcImageDataUrl,
+      carImageDataUrl,
+      vendorId,
+      selectedCarType,
+      hourlyRentalRate,
+      dailyRentalRate,
+      monthlyRentalRate,
+    } = req.body;
+    // console.log(req.body,">>>>>>>>>>>");
+
+    const rcImage = await cloudinary.v2.uploader.upload(rcImageDataUrl);
+    const rcImageurl = rcImage.url;
+
+    const carImage = await cloudinary.v2.uploader.upload(carImageDataUrl);
+    const carImageurl = carImage.url;
+
+    const car = new Car({
+      modelName,
+      deliveryHub,
+      fuelCapacity,
+      gearBoxType: selectedGearBox,
+      seatNumber,
+      mileage,
+      fuelType: selectedFuelType,
+      description,
+      rcNumber,
+      rcImage: rcImageurl,
+      carImage: carImageurl,
+      vendorId: vendorId,
+      carTypeName: selectedCarType,
+      hourlyRentalRate: hourlyRentalRate,
+      dailyRentalRate: dailyRentalRate,
+      monthlyRentalRate: monthlyRentalRate,
+    });
+
+    await car.save();
+    res.status(201).json({ message: "New Car registered successfully." });
+  } catch (error) {
+    console.error("Error registering the car:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+const deleteCar = async (req, res) => {
+  const id = req.params.id;
+
+  // console.log("inside delete Car with id:"+id);
+  await Car.findByIdAndDelete(id);
+  res.json({ message: "car deleted successfully" });
+};
+
+const checkBlockStatus=async(req,res)=>{
+  const id=req.params.vendorId;
+  const vendor=await Vendor.findById(id);
+  // console.log(user,"check block");
+  if(vendor.blockStatus===true){
+    res.json({message:"vendor is blocked"})
+  }else{
+    res.json({message:"vendor is not blocked"})
+  }
+}
+
+const resetPassword=async(req,res)=>{
+  // console.log(req.body);
+  const { emailId } = req.body;
+  const vendor = await Vendor.findOne({ emailId: emailId });
+  if (vendor) {
+    // console.log("Does Email exists-----?" + emailExist);
+    let generatedOtp = generateOTP();
+    vendorOtpCache.set(emailId, generatedOtp, 60);
+    sendOtpMail(emailId, generatedOtp);
+    // console.log(generatedOtp, "-------otp here");
+    // Send the OTP in the response to the client
+    res.json({ message: "OTP sent successfully", otp: generatedOtp });
+    // console.log(generatedOtp, ">>>>");
+  } else {
+    res.json({ message: "This Vendor doesnt exists" });
+  }
+}
+
+const verifyOTP4PasswordReset = async (req, res) => {
+  // console.log("inside verifyOTP4PasswordReset ");
+  try {
+    const { otp, emailId } = req.body;
+    const cachedOTP = vendorOtpCache.get(emailId);
+    // console.log(cachedOTP, "--------cachedOTP-----------");
+    // console.log(otp, "------------otp---------------");
+    if (cachedOTP == otp) {
+      // console.log(otp, "----------otp---------");
+      // console.log(cachedOTP, "----------inside checking---------");
+      // const user = await User.findOne({ emailId: emailId });
+      res.json({ message: "OTP sent successfully" });
+    } else {
+      res.status(400).json({ message: "wrong OTP" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+confirmNewPassword = async (req, res) => {
+  // console.log("inside confirmNewPassword");
+  const { emailId, password, confirmPassword } = req.body;
+  // console.log(emailId);
+  const vendor = await Vendor.findOne({ emailId: emailId });
+  // Validate password
+  if (!password || password.length < 8) {
+    return res.json({
+      message: "Password should be at least 8 characters long",
+    });
+  }
+
+  // Validate confirm password
+  if (password !== confirmPassword) {
+    return res.json({ message: "Passwords do not match" });
+  }
+
+  const securedPassword = await securePassword(password);
+  vendor.password = securedPassword;
+  await vendor.save();
+  console.log(vendor);
+  vendorOtpCache.del(emailId);
+  return res.json({ message: "Password Reset successfully" });
+};
+
+const googleLogin = async (req, res) => {
+  try {
+    // console.log("googleLogin");
+    const { email } = req.body;
+    // console.log(email);
+    const vendor = await Vendor.findOne({ emailId: email });
+    // console.log(user, "----user----------");
+    if (vendor) {
+      console.log("inside user");
+      const vendorToken = jwt.sign(
+        {
+          _id: vendor._id, // Include the MongoDB document ID
+          emailId: vendor.emailId, // Include other user-specific data as needed
+          firstName: vendor.firstName,
+        },
+        secretKey,
+        {
+          expiresIn: "1h", // Set an expiration time for the token
+        }
+      );
+      return res.json({
+        message: "Google Login",
+        vendorToken: vendorToken,
+        vendorFirstName: vendor.firstName,
+        vendorLastName: vendor.lastName,
+        vendorEmailId: vendor.emailId,
+        vendorId: vendor._id,
+      });
+    } else {
+      return res.json({ message: "Invalid User" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   registerVendor,
   verifyOTP,
   verifyVendorLogin,
   getProfileDetails,
   updateProfile,
+  getCarsList,
+  // loadCarTypes,
+  registerCar,
+  deleteCar,
+  editCarDetails,
+  checkBlockStatus,
+  resetPassword,
+  verifyOTP4PasswordReset,
+  confirmNewPassword,
+  googleLogin
 };

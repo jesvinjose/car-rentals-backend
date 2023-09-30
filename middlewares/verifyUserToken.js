@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const secretKey = "jesvinjose"; // Replace with your actual secret key
+const User=require("../models/userModel");
 
 const verifyUserToken = (req, res, next) => {
   const token = req.headers.authorization; // Get the token from the request header
@@ -21,4 +22,15 @@ const verifyUserToken = (req, res, next) => {
   }
 };
 
-module.exports = verifyUserToken;
+const userBlock=async(req,res,next)=>{
+  let userId=localStorage.getItem("userId");
+  const user=await User.findById(userId);
+  if(user.blockStatus===true){
+    return res.json({message:"User is Blocked"})
+  }else{
+    console.log("Hi unblocked user");
+    next();
+  }
+}
+
+module.exports = {verifyUserToken,userBlock}

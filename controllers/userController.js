@@ -6,6 +6,9 @@ const otpCache = new NodeCache();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("cloudinary");
+const Car=require("../models/carModel");
+const auth=require("../middlewares/verifyUserToken")
+const Carousel=require("../models/carouselModel");
 
 const secretKey = "jesvinjose";
 const registerUser = async (req, res) => {
@@ -182,6 +185,7 @@ const verifyUserLogin = async (req, res) => {
       // res.cookie('userToken', user._id, { maxAge: 3600000 });
       // console.log(token,"-------------Token------------------");
       // console.log(passwordMatch, "---passwordMatch----------");
+      
       return res.status(200).json({
         message: "Valid User",
         token: token,
@@ -223,6 +227,11 @@ const getProfileDetails = async (req, res) => {
       aadharBackImage: user.aadharBackImage,
       dlFrontImage: user.dlFrontImage,
       dlBackImage: user.dlBackImage,
+      walletBalance:user.walletBalance,
+      isVerified:user.isVerified,
+      blockStatus:user.blockStatus,
+      createdAt:user.createdAt,
+      verificationStatus:user.verificationStatus
     };
 
     // console.log(userDetails,"inside getProfileDetails");
@@ -254,7 +263,7 @@ const updateProfile = async (req, res) => {
     dlFrontImage,
     dlBackImage,
   } = req.body;
-  console.log(req.body, "-----------req.body..............");
+  // console.log(req.body, "-----------req.body..............");
   try {
     let aadharfrontimage = await cloudinary.v2.uploader.upload(
       aadharFrontImage
@@ -295,10 +304,11 @@ const updateProfile = async (req, res) => {
     // console.log(updatedUser, "--------final check-------");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
+    } else {
+      return res
+        .status(200)
+        .json({ message: "Profile updated successfully", user: updatedUser });
     }
-    res
-      .status(200)
-      .json({ message: "Profile updated successfully", user: updatedUser });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -404,6 +414,62 @@ const googleLogin = async (req, res) => {
   }
 };
 
+const findNewlyArrivedCars=async(req,res)=>{
+  const latestCars=await Car.find({verificationStatus:"Approved"}).sort({createdAt:-1}).limit(3);
+  // console.log(latestCars);
+  return res.json(latestCars);
+}
+
+const checkBlockStatus=async(req,res)=>{
+  const id=req.params.userId;
+  const user=await User.findById(id);
+  // console.log(user,"check block");
+  if(user.blockStatus===true){
+    res.json({message:"user is blocked"})
+  }else{
+    res.json({message:"user is not blocked"})
+  }
+}
+
+const getAllCars=async(req,res)=>{
+  const allCars = await Car.find({
+    verificationStatus: "Approved",
+    blockStatus: false
+  });
+  // console.log(allCars);
+  return res.json(allCars)
+}
+
+const getCategorywiseCars=async(req,res)=>{
+  const category = req.query.category;
+  // console.log(category,"--------category------");
+  const categoryCars=await Car.find({
+    verificationStatus: "Approved",
+    blockStatus: false,
+    carTypeName:category
+  })
+  return res.json(categoryCars)
+}
+
+const loadCarousels = async (req, res) => {
+  try {
+    const carousels = await Carousel.find({ blockStatus: false });
+
+    // Extract carouselImages for each carousel
+    const carouselImages = carousels.map(carousel => carousel.carouselImages);
+
+    console.log(carouselImages, "carouselImages--------");
+    // return res.json(carouselImages);
+    const flattenedArray=carouselImages.flat();
+    console.log(flattenedArray,"flat()");
+    return res.json(flattenedArray);
+  } catch (error) {
+    console.error("Error loading carousels:", error);
+    res.status(500).json({ error: "Unable to load carousels" });
+  }
+};
+
+
 module.exports = {
   registerUser,
   verifyOTP,
@@ -414,4 +480,9 @@ module.exports = {
   verifyOTP4PasswordReset,
   confirmNewPassword,
   googleLogin,
+  findNewlyArrivedCars,
+  checkBlockStatus,
+  getAllCars,
+  getCategorywiseCars,
+  loadCarousels
 };
