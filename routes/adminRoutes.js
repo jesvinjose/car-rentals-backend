@@ -59,4 +59,9 @@ router.get('/findVendorName/:id',adminController.getVendorName);
 router.post('/addCarousels',store.array('carouselImages', 4),adminController.addCarousel)
 router.get('/carouselslist',adminController.getCarouselList)
 router.delete('/delete-carousel/:carouselId',adminController.deleteCarousel)
+router.put('/editCarousel/:carouselId',store.array('carouselImages', 4),adminController.editCarousel)
+router.get('/loadEditCarousel/:carouselId',adminController.loadEditCarousel)
+router.put('/carouselblock/:id',adminController.blockCarousel)
+router.put('/carouselunblock/:id',adminController.unblockCarousel)
+
 module.exports = router;

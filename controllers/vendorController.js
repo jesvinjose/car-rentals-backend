@@ -163,7 +163,7 @@ const verifyVendorLogin = async (req, res) => {
       });
     }
 
-    if (vendor.blockStatus=== true) {
+    if (vendor.blockStatus === true) {
       // console.log("blockStatus");
       return res.json({
         message: "Vendor is blocked, contact jesvinjose49@gmail.com",
@@ -303,21 +303,21 @@ const updateProfile = async (req, res) => {
 };
 
 const getCarsList = async (req, res) => {
-  const vendorId=req.params.vendorId;
+  const vendorId = req.params.vendorId;
   // const objectId=new ObjectId(req.params.vendorId)
   // console.log("Hello getCarslist");
   // console.log(vendorId);
-  const carsList = await Car.find({vendorId:vendorId});
+  const carsList = await Car.find({ vendorId: vendorId });
   // // const carsList = await Car.find();
   // console.log(carsList, "----------carslist---------");
   res.json(carsList);
 };
 
 // const loadCarTypes = async (req, res) => {
-  // console.log("enter here");
+// console.log("enter here");
 //   try {
 //     const carTypes = await CarType.find();
-    // console.log(carTypes, "-----carTypes------");
+// console.log(carTypes, "-----carTypes------");
 //     res.json(carTypes);
 //   } catch (error) {
 //     console.log(error, 11111111111);
@@ -326,49 +326,55 @@ const getCarsList = async (req, res) => {
 
 const editCarDetails = async (req, res) => {
   // console.log("inside editCarDetails");
-  const id = req.params.id;
-  // console.log(id,"from editCarDetails");
-  const {
-    modelName,
-    deliveryHub,
-    fuelCapacity,
-    seatNumber,
-    mileage,
-    gearBoxType,
-    fuelType,
-    description,
-    rcNumber,
-    rcImage,
-    carImage,
-    carTypeName,
-    hourlyRentalRate,
-    dailyRentalRate,
-    monthlyRentalRate,
-  } = req.body;
-  // console.log(req.body);
-  let rcimage = await cloudinary.v2.uploader.upload(rcImage);
-  let rcimageurl = rcimage.url;
-  let carimage = await cloudinary.v2.uploader.upload(carImage);
-  let carimageurl = carimage.url;
-  await Car.findByIdAndUpdate(id, {
-    modelName,
-    deliveryHub,
-    fuelCapacity,
-    seatNumber,
-    mileage,
-    gearBoxType,
-    fuelType,
-    description,
-    rcNumber,
-    rcImage: rcimageurl,
-    carImage: carimageurl,
-    carTypeName,
-    hourlyRentalRate,
-    dailyRentalRate,
-    monthlyRentalRate,
-    verificationStatus:"pending"
-  });
-  res.json({ message: "Car updated successfully" });
+  try {
+    const id = req.params.id;
+    // console.log(id,"from editCarDetails");
+    const {
+      modelName,
+      deliveryHub,
+      fuelCapacity,
+      seatNumber,
+      mileage,
+      gearBoxType,
+      fuelType,
+      description,
+      rcNumber,
+      rcImage,
+      carImage,
+      carTypeName,
+      hourlyRentalRate,
+      dailyRentalRate,
+      monthlyRentalRate,
+      carLocation,
+    } = req.body;
+    // console.log(carLocation);
+    let rcimage = await cloudinary.v2.uploader.upload(rcImage);
+    let rcimageurl = rcimage.url;
+    let carimage = await cloudinary.v2.uploader.upload(carImage);
+    let carimageurl = carimage.url;
+    await Car.findByIdAndUpdate(id, {
+      modelName,
+      deliveryHub,
+      fuelCapacity,
+      seatNumber,
+      mileage,
+      gearBoxType,
+      fuelType,
+      description,
+      rcNumber,
+      rcImage: rcimageurl,
+      carImage: carimageurl,
+      carTypeName,
+      hourlyRentalRate,
+      dailyRentalRate,
+      monthlyRentalRate,
+      verificationStatus: "pending",
+      carLocation,
+    });
+    res.json({ message: "Car updated successfully" });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const registerCar = async (req, res) => {
@@ -391,8 +397,12 @@ const registerCar = async (req, res) => {
       hourlyRentalRate,
       dailyRentalRate,
       monthlyRentalRate,
+      carLocation,
     } = req.body;
     // console.log(req.body,">>>>>>>>>>>");
+    // console.log(carLocation, "-----carLocation--------");
+    // Extract latitude and longitude from carLocation
+    const { latitude, longitude } = carLocation;
 
     const rcImage = await cloudinary.v2.uploader.upload(rcImageDataUrl);
     const rcImageurl = rcImage.url;
@@ -417,6 +427,7 @@ const registerCar = async (req, res) => {
       hourlyRentalRate: hourlyRentalRate,
       dailyRentalRate: dailyRentalRate,
       monthlyRentalRate: monthlyRentalRate,
+      carLocation: { latitude, longitude }, // Construct carLocation object
     });
 
     await car.save();
@@ -435,18 +446,18 @@ const deleteCar = async (req, res) => {
   res.json({ message: "car deleted successfully" });
 };
 
-const checkBlockStatus=async(req,res)=>{
-  const id=req.params.vendorId;
-  const vendor=await Vendor.findById(id);
+const checkBlockStatus = async (req, res) => {
+  const id = req.params.vendorId;
+  const vendor = await Vendor.findById(id);
   // console.log(user,"check block");
-  if(vendor.blockStatus===true){
-    res.json({message:"vendor is blocked"})
-  }else{
-    res.json({message:"vendor is not blocked"})
+  if (vendor.blockStatus === true) {
+    res.json({ message: "vendor is blocked" });
+  } else {
+    res.json({ message: "vendor is not blocked" });
   }
-}
+};
 
-const resetPassword=async(req,res)=>{
+const resetPassword = async (req, res) => {
   // console.log(req.body);
   const { emailId } = req.body;
   const vendor = await Vendor.findOne({ emailId: emailId });
@@ -462,7 +473,7 @@ const resetPassword=async(req,res)=>{
   } else {
     res.json({ message: "This Vendor doesnt exists" });
   }
-}
+};
 
 const verifyOTP4PasswordReset = async (req, res) => {
   // console.log("inside verifyOTP4PasswordReset ");
@@ -515,9 +526,9 @@ const googleLogin = async (req, res) => {
     const { email } = req.body;
     // console.log(email);
     const vendor = await Vendor.findOne({ emailId: email });
-    // console.log(user, "----user----------");
+    // console.log(vendor, "----vendor----------");
     if (vendor) {
-      console.log("inside user");
+      // console.log("inside vendor");
       const vendorToken = jwt.sign(
         {
           _id: vendor._id, // Include the MongoDB document ID
@@ -560,5 +571,5 @@ module.exports = {
   resetPassword,
   verifyOTP4PasswordReset,
   confirmNewPassword,
-  googleLogin
+  googleLogin,
 };

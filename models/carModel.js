@@ -78,6 +78,14 @@ const carSchema=new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    // New field for car location (latitude and longitude)
+  carLocation: {
+    type: {
+      latitude: Number,
+      longitude: Number,
+    },
+    required: true,
+  },
 }) 
 
 const Car=mongoose.model('Car',carSchema);

@@ -134,7 +134,7 @@ const verifyOTP = async (req, res) => {
     await newUser.save();
     otpCache.del(emailId);
     // console.log("Verify OTP Success");
-    res.json({ message: "OTP sent successfully" });
+    res.json({ message: "Verify OTP Success" });
   } else {
     res.status(400).json({ message: "wrong OTP" });
   }
@@ -407,13 +407,88 @@ const googleLogin = async (req, res) => {
         userId: user._id,
       });
     } else {
-      return res.json({ message: "Invalid User" });
+      return res.json({ message: "Invalid User",email:email });
     }
   } catch (error) {
     console.log(error);
   }
 };
 
+// const googleSignUp=async(req,res)=>{
+//   try {
+//     console.log("googleSignUp");
+//     const { email } = req.body;
+//     console.log(email);
+//     const user = await User.findOne({ emailId: email });
+//     if(user){
+//       return res.json({ message: "User have already Registered" });
+//     }else{
+//       return res.json({message:"Open google sign up registration form"})
+//     }
+//   } catch (error) {
+    
+//   }
+// }
+
+const googleRegistration=async(req,res)=>{
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    mobileNumber,
+  } = req.body;
+  // console.log(req.body, "inside  googleRegistration for the user");
+
+  //Validate firstName
+  if (!firstName || firstName.trim().length === 0) {
+    return res.status(400).json({ message: "Please enter a valid firstName" });
+  }
+
+  // Validate lastName
+  if (!lastName || lastName.trim().length === 0) {
+    return res.status(400).json({ message: "Please enter a valid lastName" });
+  }
+
+  // Validate password
+  if (!password || password.length < 8) {
+    return res.status(400).json({
+      message: "Password should be at least 8 characters long",
+    });
+  }
+
+  // Validate confirm password
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match" });
+  }
+
+  //mobileNumber validation
+  if (!mobileNumber || !validator.isMobilePhone(mobileNumber)) {
+    return res
+      .status(400)
+      .json({ message: "Please enter a valid mobile number" });
+  }
+
+  const securedPassword = await securePassword(password);
+    const newUser = new User({
+      firstName: firstName,
+      lastName: lastName,
+      emailId: email,
+      mobileNumber: mobileNumber,
+      password: securedPassword,
+      isVerified: true,
+    });
+    await newUser.save();
+
+    if (newUser){
+      return res.json({message:"Google registration is success"})
+    }
+    if(!newUser){
+      return res.json({message:"Google registration is failure"})
+    }
+
+}
 const findNewlyArrivedCars=async(req,res)=>{
   const latestCars=await Car.find({verificationStatus:"Approved"}).sort({createdAt:-1}).limit(3);
   // console.log(latestCars);
@@ -431,14 +506,89 @@ const checkBlockStatus=async(req,res)=>{
   }
 }
 
-const getAllCars=async(req,res)=>{
-  const allCars = await Car.find({
-    verificationStatus: "Approved",
-    blockStatus: false
-  });
-  // console.log(allCars);
-  return res.json(allCars)
-}
+// const getAllCars=async(req,res)=>{
+//   const allCars = await Car.find({
+//     verificationStatus: "Approved",
+//     blockStatus: false
+//   });
+//   const search=req.query.search;
+//   const fuelTypes=req.query.fuelTypes;
+//   const gearTypes=req.query.gearTypes;
+//   const carTypes=req.query.carTypes;
+//   const sortTypes=req.query.sortTypes;
+//   console.log(fuelTypes,"------fuelTypes-------");
+//   if(fuelTypes){
+//     const fuelTypeCars=await Car.find({fuelType:fuelTypes});
+//     return res.json(fuelTypeCars)
+//   }
+//   if(gearTypes){
+//     const gearTypeCars=await Car.find({gearBoxType:gearTypes});
+//     return res.json(gearTypeCars)
+//   }
+//   if(carTypes){
+//     const carTypeCars=await Car.find({carTypeName:carTypes});
+//     return res.json(carTypeCars)
+//   }
+//   if(sortTypes){
+//     if(sortTypes==="sortPriceLowToHigh"){
+//       const sortedCars=await Car.find({hourlyRentalRate:1});
+//       return res.json(sortedCars);
+//     }
+//     if(sortTypes==="sortPriceHighToLow"){
+//       const sortedCars=await Car.find({hourlyRentalRate:-1});
+//       return res.json(sortedCars);
+//     }
+//   }
+
+//   // console.log(allCars);
+//   return res.json(allCars)
+// }
+
+const getAllCars = async (req, res) => {
+  try {
+    const { search, carTypes, gearTypes, fuelTypes, sortTypes } = req.query;
+
+    let query = {
+      verificationStatus: 'Approved',
+      blockStatus: false,
+    };
+
+    if (fuelTypes) {
+      query.fuelType = fuelTypes;
+    }
+
+    if (gearTypes) {
+      query.gearBoxType = gearTypes;
+    }
+
+    if (carTypes) {
+      query.carTypeName = carTypes;
+    }
+
+    if(search){
+      query.modelName=search;
+    }
+
+    let cars;
+
+    if (sortTypes) {
+      let sortDirection = 1; // Default to ascending
+
+      if (sortTypes === 'sortPriceHighToLow') {
+        sortDirection = -1;
+      }
+
+      cars = await Car.find(query).sort({ hourlyRentalRate: sortDirection });
+    } else {
+      cars = await Car.find(query);
+    }
+
+    return res.json(cars);
+  } catch (error) {
+    console.error('Error fetching cars:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 const getCategorywiseCars=async(req,res)=>{
   const category = req.query.category;
@@ -458,10 +608,10 @@ const loadCarousels = async (req, res) => {
     // Extract carouselImages for each carousel
     const carouselImages = carousels.map(carousel => carousel.carouselImages);
 
-    console.log(carouselImages, "carouselImages--------");
+    // console.log(carouselImages, "carouselImages--------");
     // return res.json(carouselImages);
     const flattenedArray=carouselImages.flat();
-    console.log(flattenedArray,"flat()");
+    // console.log(flattenedArray,"flat()");
     return res.json(flattenedArray);
   } catch (error) {
     console.error("Error loading carousels:", error);
@@ -469,6 +619,95 @@ const loadCarousels = async (req, res) => {
   }
 };
 
+const getGearTypeCars=async(req,res)=>{
+  try {
+    const gearType = req.query.gearType;
+    // console.log(gearType,"--gearType----");
+    // Assuming you have a mechanism to fetch gear type cars based on gearType
+    const gearTypeCars = await Car.find({ gearBoxType: gearType });
+    // console.log(gearTypeCars,"-------geartypedCars---------");
+    // If you have the gearTypeCars data, send it in the response
+    return res.json(gearTypeCars);
+  } catch (error) {
+    console.error('Error fetching gear type cars:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+const getCarsByCarType = async (req, res) => {
+
+  try {
+    const carType = req.query.carType; // Assuming it's an array of car types
+    // If carType is not provided, return all cars
+    if (!carType) {
+      const allCars = await Car.find();
+      return res.json(allCars);
+    }
+
+    // Filter cars based on the provided car types
+    const carTypeCars = await Car.find({ carTypeName: { $in: carType } });
+    return res.json(carTypeCars);
+  } catch (error) {
+    console.error('Error fetching car type cars:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
+
+
+
+const getFuelTypeCars=async(req,res)=>{
+  try {
+    const fuelType = req.query.fuelType;
+    // console.log(fuelType,"--fuelType----");
+    // Assuming you have a mechanism to fetch gear type cars based on gearType
+    const fuelTypeCars = await Car.find({ fuelType: fuelType });
+    // console.log(gearTypeCars,"-------geartypedCars---------");
+    // If you have the gearTypeCars data, send it in the response
+    return res.json(fuelTypeCars);
+  } catch (error) {
+    console.error('Error fetching fuel type cars:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+const getSortedCarsinAscenting = async (req, res) => {
+  const sortType = req.query.SortAscentingType; // "asc" for ascending, "desc" for descending
+
+  try {
+    let sortDirection = 1; // Default: ascending order
+    if (sortType === "desc") {
+      sortDirection = -1; // Set to -1 for descending order
+    }
+
+    const sortedCars = await Car.find().sort({ hourlyRentalRate: sortDirection });
+    // console.log(sortedCars,"-------sortedCars--------");
+    return res.json(sortedCars);
+  } catch (error) {
+    console.error("Error fetching sorted cars:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getSortedCarsinDescenting=async(req,res)=>{
+  const sortType = req.query.SortDescentingType; // "asc" for ascending, "desc" for descending
+
+  try {
+    let sortDirection = 1; // Default: ascending order
+    if (sortType === "desc") {
+      sortDirection = -1; // Set to -1 for descending order
+    }
+
+    const sortedCars = await Car.find().sort({ hourlyRentalRate: sortDirection });
+    // console.log(sortedCars,"-------sortedCars--------");
+    return res.json(sortedCars);
+  } catch (error) {
+    console.error("Error fetching sorted cars:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 
 module.exports = {
   registerUser,
@@ -484,5 +723,12 @@ module.exports = {
   checkBlockStatus,
   getAllCars,
   getCategorywiseCars,
-  loadCarousels
+  loadCarousels,
+  // googleSignUp,
+  googleRegistration,
+  getGearTypeCars,
+  getFuelTypeCars,
+  getCarsByCarType,
+  getSortedCarsinAscenting,
+  getSortedCarsinDescenting
 };

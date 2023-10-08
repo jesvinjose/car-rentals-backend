@@ -8,6 +8,7 @@ const secretKey = "jesvin";
 const Car = require("../models/carModel");
 const Carousel = require("../models/carouselModel");
 const cloudinary = require("cloudinary");
+const nodemailer = require("nodemailer");
 
 const adminLogin = async (req, res) => {
   // console.log("hi");
@@ -301,6 +302,15 @@ const blockCar = async (req, res) => {
   res.json({ message: "Car blocked successfully" });
 };
 
+const blockCarousel=async (req, res) => {
+  const id = req.params.id;
+  console.log(id, "id in blockCarousel");
+  const carousel = await Carousel.findById(id);
+  carousel.blockStatus = true;
+  await carousel.save();
+  res.json({ message: "Carousel blocked successfully" });
+};
+
 const unblockCar = async (req, res) => {
   const id = req.params.id;
   // console.log(id,"id in unblockCar");
@@ -310,14 +320,67 @@ const unblockCar = async (req, res) => {
   res.json({ message: "Car unblocked successfully" });
 };
 
+const unblockCarousel=async(req,res)=>{
+  const id = req.params.id;
+  console.log(id, "id in unblockCarousel");
+  const carousel = await Carousel.findById(id);
+  carousel.blockStatus = false;
+  await carousel.save();
+  res.json({ message: "Carousel unblocked successfully" });
+}
+
 const acceptCar = async (req, res) => {
   const id = req.params.id;
-  console.log(id, "id in acceptCar");
+  // console.log(id, "id in acceptCar");
   const car = await Car.findById(id);
   car.verificationStatus = "Approved";
   await car.save();
+  // console.log(car.vendorId,"--------vendorId of vendor");
+  const vendor=await Vendor.findById(car.vendorId)
+  // console.log(vendor,"-------vendor Details-------");
+  console.log(vendor.emailId,"--vendors emailId");
+  var message=`Your car with the following details has been accepted:\n\n
+  ModelName: ${car.modelName}\n
+  DeliveryHub: ${car.deliveryHub}\n
+  FuelCapacity:${car.fuelCapacity}\n
+  SeatNumber:${car.seatNumber}\n
+  Mileage:${car.mileage}\n
+  GearBoxType:${car.gearBoxType}\n
+  FuelType:${car.fuelType}\n
+  RCNumber:${car.rcNumber}\n
+  RCImage:${car.rcImage}\n
+  CarImage:${car.carImage}\n
+  CarTypeName:${car.carTypeName}\n
+  HourlyRentalRate:${car.hourlyRentalRate}\n
+  DailyRentalRate:${car.dailyRentalRate}\n
+  MonthlyRentalRate:${car.monthlyRentalRate}\n
+  CarLocation:${car.carLocation}\n`
+  statusEmail(vendor.emailId,message)
   res.json({ message: "Car is Accepted" });
 };
+
+async function statusEmail(email,message) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "jesvinjose49@gmail.com",
+        pass: "yyrasmmhnslhbidv",
+      },
+    });
+    const mailOptions = {
+      from: "jesvinjose49@gmail.com",
+      to: email,
+      subject: "Your Car verification Status",
+      text: message,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    // console.log(result);
+  } catch (error) {
+    console.log(error.message);
+  }
+}
 
 const rejectCar = async (req, res) => {
   const id = req.params.id;
@@ -325,6 +388,29 @@ const rejectCar = async (req, res) => {
   const car = await Car.findById(id);
   car.verificationStatus = "Rejected";
   await car.save();
+    // console.log(car.vendorId,"--------vendorId of vendor");
+    const vendor=await Vendor.findById(car.vendorId)
+    // console.log(vendor,"-------vendor Details-------");
+    console.log(vendor.emailId,"--vendors emailId");
+    var message=`Your car with the following details has been rejected:\n\n
+    ModelName: ${car.modelName}\n
+    DeliveryHub: ${car.deliveryHub}\n
+    FuelCapacity:${car.fuelCapacity}\n
+    SeatNumber:${car.seatNumber}\n
+    Mileage:${car.mileage}\n
+    GearBoxType:${car.gearBoxType}\n
+    FuelType:${car.fuelType}\n
+    RCNumber:${car.rcNumber}\n
+    RCImage:${car.rcImage}\n
+    CarImage:${car.carImage}\n
+    CarTypeName:${car.carTypeName}\n
+    HourlyRentalRate:${car.hourlyRentalRate}\n
+    DailyRentalRate:${car.dailyRentalRate}\n
+    MonthlyRentalRate:${car.monthlyRentalRate}\n
+    CarLocation:${car.carLocation}\n`
+    // ... Add other car details as needed ...\n
+    // \n\nReason for rejection: ${req.body.reason}`;
+    statusEmail(vendor.emailId,message)
   res.json({ message: "Car is Rejected" });
 };
 
@@ -353,6 +439,63 @@ const deleteCarousel = async (req, res) => {
   }
 };
 
+const editCarousel = async (req, res) => {
+  try {
+    const carouselId = req.params.carouselId;
+    const name = req.body.carouselName;
+    const description = req.body.carouselDescription;
+
+    // const files = req.files;
+    const carouselImages = [];
+    const imageUrls = [];
+
+    // Upload each carousel image to Cloudinary and store the URLs
+    for (const image of req.files) {
+      try {
+        const result = await cloudinary.uploader.upload(image.path);
+        imageUrls.push(result.secure_url);
+      } catch (error) {
+        console.error("Error uploading image to Cloudinary:", error);
+        // Handle error appropriately, e.g., send an error response
+        return res
+          .status(500)
+          .json({ error: "Error uploading image to Cloudinary" });
+      }
+    }
+
+    // files.forEach((file) => {
+    //   const image = file.filename;
+    //   carouselImages.push(image);
+    // });
+
+    const updatedCarousel=await Carousel.findByIdAndUpdate(
+      { _id: carouselId },
+      {
+        $set: {
+          carouselName: name,
+          carouselDescription: description,
+          carouselImages: imageUrls,
+        },
+      }
+    );
+    return res.json(updatedCarousel)
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const loadEditCarousel=async(req,res)=>{
+  try {
+    const carouselId = req.params.carouselId;
+    console.log(carouselId,"----carouselId--------");
+    const carousel=await Carousel.findById(carouselId);
+    console.log(carousel,"inside loadEditCarousel");
+    return res.json(carousel)
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 module.exports = {
   addCarousel,
   adminLogin,
@@ -380,4 +523,8 @@ module.exports = {
   getVendorName,
   getCarouselList,
   deleteCarousel,
+  editCarousel,
+  loadEditCarousel,
+  blockCarousel,
+  unblockCarousel
 };
