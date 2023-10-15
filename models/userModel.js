@@ -64,11 +64,11 @@ const userSchema=mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    verificationStatus: {
-        type: String,
-        enum: ["pending", "Approved", "Rejected"],
-        default: "pending",
-    },
+    // verificationStatus: {
+    //     type: String,
+    //     enum: ["pending", "Approved", "Rejected"],
+    //     default: "pending",
+    // },
     
 })
 

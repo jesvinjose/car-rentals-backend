@@ -1,21 +1,31 @@
 const express=require('express');
 const router=express.Router();
 const vendorController=require('../controllers/vendorController');
+const auth=require("../middlewares/verifyVendorToken");
 
 router.post('/register',vendorController.registerVendor);
 router.post('/verifyOTP',vendorController.verifyOTP);
 router.post('/verifyVendorLogin',vendorController.verifyVendorLogin)
 router.post('/verifyGoogleLogin',vendorController.googleLogin)
-router.get('/carslist/:vendorId',vendorController.getCarsList)
-router.post('/updateVendorProfile/:vendorId',vendorController.updateProfile)
 
-// router.get('/cartypes',vendorController.loadCarTypes)
-router.post('/registercar',vendorController.registerCar)
-router.get('/deletecar/:id',vendorController.deleteCar)
-router.put('/carDataFormEdit/:id',vendorController.editCarDetails)
-router.get('/:vendorId',vendorController.getProfileDetails)
+router.post('/googleregister',vendorController.googleRegistration)
 
-//middleware
+
+router.get('/carslist/:vendorId', auth.verifyVendorToken,vendorController.getCarsList)
+router.get('/bookingslist/:vendorId',auth.verifyVendorToken,vendorController.getBookingsList)
+
+//no use
+// router.get('/cartypes',vendorController.loadCarTypes) 
+
+router.post('/registercar/:vendorId',auth.verifyVendorToken,vendorController.registerCar)
+
+router.get('/deletecar/:id',auth.verifyVendorToken,vendorController.deleteCar)
+router.put('/carDataFormEdit/:id',auth.verifyVendorToken,vendorController.editCarDetails)
+
+router.get('/:vendorId',auth.verifyVendorToken,vendorController.getProfileDetails)
+router.post('/updateVendorProfile/:vendorId',auth.verifyVendorToken,vendorController.updateProfile)
+
+//middleware to check blockstatus of vendor in the privateroute
 router.get('/checkBlockStatus/:vendorId',vendorController.checkBlockStatus)
 
 //forgot password

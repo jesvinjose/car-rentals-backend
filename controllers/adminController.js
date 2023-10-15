@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel");
 const User = require("../models/userModel");
 const Vendor = require("../models/vendorModel");
-const secretKey = "jesvin";
+const ADMIN_TOKEN_SECRETKEY=process.env.admintoken_secretKey;
 // const CarType = require("../models/carTypeModel");
 const Car = require("../models/carModel");
 const Carousel = require("../models/carouselModel");
@@ -25,7 +25,7 @@ const adminLogin = async (req, res) => {
           _id: adminDetails._id, // Include the MongoDB document ID
           emailId: adminDetails.emailId, // Include other user-specific data as needed
         },
-        secretKey,
+        ADMIN_TOKEN_SECRETKEY,
         { expiresIn: "1h" }
       );
       // console.log(adminToken);
@@ -67,7 +67,7 @@ const loadAdminHome = (req, res) => {
 
   try {
     // Verify the token and extract adminId (payload)
-    const decodedToken = jwt.verify(token, secretKey);
+    const decodedToken = jwt.verify(token, ADMIN_TOKEN_SECRETKEY);
     // console.log("Decoded token:"+decodedToken);
     // Check if the decoded token contains adminId (you can add more validation here)
     if (decodedToken.adminId) {
@@ -166,41 +166,41 @@ const blockVendor = async (req, res) => {
   res.json({ message: "vendor blocked successfully" });
 };
 
-const acceptUser = async (req, res) => {
-  // console.log(req.params.id,"-------from params of userRoute----------");
-  // console.log("inside acceptUser-----------");
-  const user = await User.findByIdAndUpdate(req.params.id);
-  user.verificationStatus = "Approved";
-  await user.save();
-  res.json({ message: "User Account is Accepted" });
-};
+// const acceptUser = async (req, res) => {
+//   // console.log(req.params.id,"-------from params of userRoute----------");
+//   // console.log("inside acceptUser-----------");
+//   const user = await User.findByIdAndUpdate(req.params.id);
+//   user.verificationStatus = "Approved";
+//   await user.save();
+//   res.json({ message: "User Account is Accepted" });
+// };
 
-const acceptVendor = async (req, res) => {
-  console.log(req.params.id, "-------from params of userRoute----------");
-  console.log("inside acceptVendor-----------");
-  const vendor = await Vendor.findByIdAndUpdate(req.params.id);
-  vendor.verificationStatus = "Approved";
-  await vendor.save();
-  res.json({ message: "Vendor Account is Accepted" });
-};
+// const acceptVendor = async (req, res) => {
+//   console.log(req.params.id, "-------from params of userRoute----------");
+//   console.log("inside acceptVendor-----------");
+//   const vendor = await Vendor.findByIdAndUpdate(req.params.id);
+//   vendor.verificationStatus = "Approved";
+//   await vendor.save();
+//   res.json({ message: "Vendor Account is Accepted" });
+// };
 
-const rejectUser = async (req, res) => {
-  // console.log(req.params.id,"-------from params of userRoute----------");
-  // console.log("inside rejectVendor-----------");
-  const user = await User.findByIdAndUpdate(req.params.id);
-  user.verificationStatus = "Rejected";
-  await user.save();
-  res.json({ message: "User Account is Rejected" });
-};
+// const rejectUser = async (req, res) => {
+//   // console.log(req.params.id,"-------from params of userRoute----------");
+//   // console.log("inside rejectVendor-----------");
+//   const user = await User.findByIdAndUpdate(req.params.id);
+//   user.verificationStatus = "Rejected";
+//   await user.save();
+//   res.json({ message: "User Account is Rejected" });
+// };
 
-const rejectVendor = async (req, res) => {
-  // console.log(req.params.id,"-------from params of userRoute----------");
-  // console.log("inside rejectUser-----------");
-  const vendor = await Vendor.findByIdAndUpdate(req.params.id);
-  vendor.verificationStatus = "Rejected";
-  await vendor.save();
-  res.json({ message: "Vendor Account is Rejected" });
-};
+// const rejectVendor = async (req, res) => {
+//   // console.log(req.params.id,"-------from params of userRoute----------");
+//   // console.log("inside rejectUser-----------");
+//   const vendor = await Vendor.findByIdAndUpdate(req.params.id);
+//   vendor.verificationStatus = "Rejected";
+//   await vendor.save();
+//   res.json({ message: "Vendor Account is Rejected" });
+// };
 
 // const registerCarType = async (req, res) => {
 //   console.log("inside registerCarType function ");
@@ -414,7 +414,7 @@ const rejectCar = async (req, res) => {
   res.json({ message: "Car is Rejected" });
 };
 
-const getVendorName = async (req, res) => {
+const getVendorNameAndAdharImages = async (req, res) => {
   const id = req.params.id;
   // console.log(id,"id in getVendorName");
   const vendor = await Vendor.findOne({ _id: id });
@@ -433,8 +433,10 @@ const deleteCarousel = async (req, res) => {
   try {
     // Find the carousel by ID and remove it
     await Carousel.findByIdAndRemove(carouselId);
+    console.log(carouselId,"-------deleting carousel---------");
     res.status(200).json({ message: "Carousel deleted successfully" });
   } catch (error) {
+    console.error('Error deleting carousel:', error);
     res.status(500).json({ error: "Could not delete carousel" });
   }
 };
@@ -506,10 +508,10 @@ module.exports = {
   getVendorsList,
   blockVendor,
   unblockVendor,
-  acceptUser,
-  rejectUser,
-  acceptVendor,
-  rejectVendor,
+  // acceptUser,
+  // rejectUser,
+  // acceptVendor,
+  // rejectVendor,
   // registerCarType,
   // getCartypeslist,
   // blockCarType,
@@ -520,7 +522,7 @@ module.exports = {
   unblockCar,
   acceptCar,
   rejectCar,
-  getVendorName,
+  getVendorNameAndAdharImages,
   getCarouselList,
   deleteCarousel,
   editCarousel,

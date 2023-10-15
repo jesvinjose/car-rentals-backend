@@ -6,11 +6,15 @@ const otpCache = new NodeCache();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("cloudinary");
-const Car=require("../models/carModel");
-const auth=require("../middlewares/verifyUserToken")
-const Carousel=require("../models/carouselModel");
+const Car = require("../models/carModel");
+const auth = require("../middlewares/verifyUserToken");
+const Carousel = require("../models/carouselModel");
+const Booking = require("../models/bookingModel");
 
-const secretKey = "jesvinjose";
+// const secretKey = "jesvinjose";
+require("dotenv").config();
+const USER_TOKEN_SECRETKEY = process.env.usertoken_secretKey;
+
 const registerUser = async (req, res) => {
   const {
     firstName,
@@ -177,7 +181,7 @@ const verifyUserLogin = async (req, res) => {
           emailId: user.emailId, // Include other user-specific data as needed
           firstName: user.firstName,
         },
-        secretKey,
+        process.env.usertoken_secretKey,
         {
           expiresIn: "1h", // Set an expiration time for the token
         }
@@ -185,7 +189,7 @@ const verifyUserLogin = async (req, res) => {
       // res.cookie('userToken', user._id, { maxAge: 3600000 });
       // console.log(token,"-------------Token------------------");
       // console.log(passwordMatch, "---passwordMatch----------");
-      
+
       return res.status(200).json({
         message: "Valid User",
         token: token,
@@ -227,11 +231,11 @@ const getProfileDetails = async (req, res) => {
       aadharBackImage: user.aadharBackImage,
       dlFrontImage: user.dlFrontImage,
       dlBackImage: user.dlBackImage,
-      walletBalance:user.walletBalance,
-      isVerified:user.isVerified,
-      blockStatus:user.blockStatus,
-      createdAt:user.createdAt,
-      verificationStatus:user.verificationStatus
+      walletBalance: user.walletBalance,
+      isVerified: user.isVerified,
+      blockStatus: user.blockStatus,
+      createdAt: user.createdAt,
+      verificationStatus: user.verificationStatus,
     };
 
     // console.log(userDetails,"inside getProfileDetails");
@@ -393,7 +397,7 @@ const googleLogin = async (req, res) => {
           emailId: user.emailId, // Include other user-specific data as needed
           firstName: user.firstName,
         },
-        secretKey,
+        process.env.usertoken_secretKey,
         {
           expiresIn: "1h", // Set an expiration time for the token
         }
@@ -407,7 +411,7 @@ const googleLogin = async (req, res) => {
         userId: user._id,
       });
     } else {
-      return res.json({ message: "Invalid User",email:email });
+      return res.json({ message: "Invalid User", email: email });
     }
   } catch (error) {
     console.log(error);
@@ -426,11 +430,11 @@ const googleLogin = async (req, res) => {
 //       return res.json({message:"Open google sign up registration form"})
 //     }
 //   } catch (error) {
-    
+
 //   }
 // }
 
-const googleRegistration=async(req,res)=>{
+const googleRegistration = async (req, res) => {
   const {
     firstName,
     lastName,
@@ -471,40 +475,41 @@ const googleRegistration=async(req,res)=>{
   }
 
   const securedPassword = await securePassword(password);
-    const newUser = new User({
-      firstName: firstName,
-      lastName: lastName,
-      emailId: email,
-      mobileNumber: mobileNumber,
-      password: securedPassword,
-      isVerified: true,
-    });
-    await newUser.save();
+  const newUser = new User({
+    firstName: firstName,
+    lastName: lastName,
+    emailId: email,
+    mobileNumber: mobileNumber,
+    password: securedPassword,
+    isVerified: true,
+  });
+  await newUser.save();
 
-    if (newUser){
-      return res.json({message:"Google registration is success"})
-    }
-    if(!newUser){
-      return res.json({message:"Google registration is failure"})
-    }
-
-}
-const findNewlyArrivedCars=async(req,res)=>{
-  const latestCars=await Car.find({verificationStatus:"Approved"}).sort({createdAt:-1}).limit(3);
+  if (newUser) {
+    return res.json({ message: "Google registration is success" });
+  }
+  if (!newUser) {
+    return res.json({ message: "Google registration is failure" });
+  }
+};
+const findNewlyArrivedCars = async (req, res) => {
+  const latestCars = await Car.find({ verificationStatus: "Approved" })
+    .sort({ createdAt: -1 })
+    .limit(3);
   // console.log(latestCars);
   return res.json(latestCars);
-}
+};
 
-const checkBlockStatus=async(req,res)=>{
-  const id=req.params.userId;
-  const user=await User.findById(id);
+const checkBlockStatus = async (req, res) => {
+  const id = req.params.userId;
+  const user = await User.findById(id);
   // console.log(user,"check block");
-  if(user.blockStatus===true){
-    res.json({message:"user is blocked"})
-  }else{
-    res.json({message:"user is not blocked"})
+  if (user.blockStatus === true) {
+    res.json({ message: "user is blocked" });
+  } else {
+    res.json({ message: "user is not blocked" });
   }
-}
+};
 
 // const getAllCars=async(req,res)=>{
 //   const allCars = await Car.find({
@@ -546,10 +551,10 @@ const checkBlockStatus=async(req,res)=>{
 
 const getAllCars = async (req, res) => {
   try {
-    const { search, carTypes, gearTypes, fuelTypes, sortTypes } = req.query;
+    const { search, carTypes, gearTypes, fuelTypes, sortTypes, pickupDate, returnDate } = req.query;
 
     let query = {
-      verificationStatus: 'Approved',
+      verificationStatus: "Approved",
       blockStatus: false,
     };
 
@@ -565,52 +570,79 @@ const getAllCars = async (req, res) => {
       query.carTypeName = carTypes;
     }
 
-    if(search){
-      query.modelName=search;
+    if (search) {
+      query.modelName = search;
     }
 
     let cars;
 
+    // if (pickupDate && returnDate) {
+    //   // Filter based on availability
+    //   const bookedCarIds = await Booking.aggregate([
+    //     {
+    //       $unwind: '$bookingHistory'
+    //     },
+    //     {
+    //       $match: {
+    //         $and: [
+    //           { 'bookingHistory.pickupDate': { $lte: returnDate } },
+    //           { 'bookingHistory.returnDate': { $gte: pickupDate } },
+    //           { 'bookingHistory.bookingStatus': 'booked' }
+    //         ]
+    //       }
+    //     },
+    //     {
+    //       $group: {
+    //         _id: '$carId'
+    //       }
+    //     }
+    //   ]);
+
+    //   const bookedCarIdsArray = bookedCarIds.map((item) => item._id);
+
+    //   query._id = { $nin: bookedCarIdsArray };
+    // }
+
     if (sortTypes) {
       let sortDirection = 1; // Default to ascending
 
-      if (sortTypes === 'sortPriceHighToLow') {
+      if (sortTypes === "sortPriceHighToLow") {
         sortDirection = -1;
       }
 
-      cars = await Car.find(query).sort({ hourlyRentalRate: sortDirection });
+      cars = await Car.find(query).sort({ dailyRentalRate: sortDirection });
     } else {
       cars = await Car.find(query);
     }
 
     return res.json(cars);
   } catch (error) {
-    console.error('Error fetching cars:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error fetching cars:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-const getCategorywiseCars=async(req,res)=>{
+const getCategorywiseCars = async (req, res) => {
   const category = req.query.category;
   // console.log(category,"--------category------");
-  const categoryCars=await Car.find({
+  const categoryCars = await Car.find({
     verificationStatus: "Approved",
     blockStatus: false,
-    carTypeName:category
-  })
-  return res.json(categoryCars)
-}
+    carTypeName: category,
+  });
+  return res.json(categoryCars);
+};
 
 const loadCarousels = async (req, res) => {
   try {
     const carousels = await Carousel.find({ blockStatus: false });
 
     // Extract carouselImages for each carousel
-    const carouselImages = carousels.map(carousel => carousel.carouselImages);
+    const carouselImages = carousels.map((carousel) => carousel.carouselImages);
 
     // console.log(carouselImages, "carouselImages--------");
     // return res.json(carouselImages);
-    const flattenedArray=carouselImages.flat();
+    const flattenedArray = carouselImages.flat();
     // console.log(flattenedArray,"flat()");
     return res.json(flattenedArray);
   } catch (error) {
@@ -619,95 +651,90 @@ const loadCarousels = async (req, res) => {
   }
 };
 
-const getGearTypeCars=async(req,res)=>{
+const getCarDetails = async (req, res) => {
   try {
-    const gearType = req.query.gearType;
-    // console.log(gearType,"--gearType----");
-    // Assuming you have a mechanism to fetch gear type cars based on gearType
-    const gearTypeCars = await Car.find({ gearBoxType: gearType });
-    // console.log(gearTypeCars,"-------geartypedCars---------");
-    // If you have the gearTypeCars data, send it in the response
-    return res.json(gearTypeCars);
+    const carId = req.query.carId;
+    const carDetails = await Car.findById(carId);
+    // console.log(carDetails,"---in the backend");
+    return res.json(carDetails);
   } catch (error) {
-    console.error('Error fetching gear type cars:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-}
-
-const getCarsByCarType = async (req, res) => {
-
-  try {
-    const carType = req.query.carType; // Assuming it's an array of car types
-    // If carType is not provided, return all cars
-    if (!carType) {
-      const allCars = await Car.find();
-      return res.json(allCars);
-    }
-
-    // Filter cars based on the provided car types
-    const carTypeCars = await Car.find({ carTypeName: { $in: carType } });
-    return res.json(carTypeCars);
-  } catch (error) {
-    console.error('Error fetching car type cars:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error);
   }
 };
 
-
-
-
-
-
-const getFuelTypeCars=async(req,res)=>{
+const searchAvailableCars = async (req, res) => {
   try {
-    const fuelType = req.query.fuelType;
-    // console.log(fuelType,"--fuelType----");
-    // Assuming you have a mechanism to fetch gear type cars based on gearType
-    const fuelTypeCars = await Car.find({ fuelType: fuelType });
-    // console.log(gearTypeCars,"-------geartypedCars---------");
-    // If you have the gearTypeCars data, send it in the response
-    return res.json(fuelTypeCars);
+    const { pickupDate, returnDate } = req.body;
+    console.log(pickupDate,"-----pickupDate");
+    console.log(returnDate,"-----returnDate-----");
+    const bookedCarIds = await Booking.aggregate([
+      {
+        $unwind: '$bookingHistory'
+      },
+      {
+        $match: {
+          $and: [
+            { 'bookingHistory.pickupDate': { $lte: returnDate } },
+            { 'bookingHistory.returnDate': { $gte: pickupDate } },
+            { 'bookingHistory.bookingStatus': 'booked' }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: '$carId'
+        }
+      }
+    ]);
+    console.log(bookedCarIds);
+    
+    const bookedCarIdsArray = bookedCarIds.map((item) => item._id);
+    
+    const availableCars = await Car.find({
+      _id: { $nin: bookedCarIdsArray }
+    });
+    console.log(availableCars.length);
+
+    return res.json(availableCars)
+    
+    
   } catch (error) {
-    console.error('Error fetching fuel type cars:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-}
-
-const getSortedCarsinAscenting = async (req, res) => {
-  const sortType = req.query.SortAscentingType; // "asc" for ascending, "desc" for descending
-
-  try {
-    let sortDirection = 1; // Default: ascending order
-    if (sortType === "desc") {
-      sortDirection = -1; // Set to -1 for descending order
-    }
-
-    const sortedCars = await Car.find().sort({ hourlyRentalRate: sortDirection });
-    // console.log(sortedCars,"-------sortedCars--------");
-    return res.json(sortedCars);
-  } catch (error) {
-    console.error("Error fetching sorted cars:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.log(error);
   }
 };
 
-const getSortedCarsinDescenting=async(req,res)=>{
-  const sortType = req.query.SortDescentingType; // "asc" for ascending, "desc" for descending
+const bookCar = async (req, res) => {
+  console.log(req.body, "inside bookCar");
+  const { carId, bookingData } = req.body; // Extract carId and bookingData correctly
+  const userId = bookingData.userId;
+  const car = await Car.findById(carId);
+  const Amount = bookingData.Amount;
+  const vendorId = car.vendorId;
+
+  const newBooking = new Booking({
+    vendorId: vendorId,
+    carId: carId,
+
+    bookingHistory: [
+      {
+        pickupDate: bookingData.pickupDate,
+        returnDate: bookingData.returnDate,
+        userId: userId,
+        bookingStatus: 'booked',
+        Amount: Amount,
+      },
+    ],
+  });
 
   try {
-    let sortDirection = 1; // Default: ascending order
-    if (sortType === "desc") {
-      sortDirection = -1; // Set to -1 for descending order
-    }
-
-    const sortedCars = await Car.find().sort({ hourlyRentalRate: sortDirection });
-    // console.log(sortedCars,"-------sortedCars--------");
-    return res.json(sortedCars);
+    await newBooking.save();
+    res.status(200).json({ message: 'Booking successful' });
   } catch (error) {
-    console.error("Error fetching sorted cars:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error(error);
+    res.status(500).json({ message: 'Booking failed' });
   }
-}
+};
+
 
 module.exports = {
   registerUser,
@@ -726,9 +753,7 @@ module.exports = {
   loadCarousels,
   // googleSignUp,
   googleRegistration,
-  getGearTypeCars,
-  getFuelTypeCars,
-  getCarsByCarType,
-  getSortedCarsinAscenting,
-  getSortedCarsinDescenting
+  getCarDetails,
+  searchAvailableCars,
+  bookCar
 };

@@ -9,15 +9,6 @@ router.get('/usershome',userController.loadCarousels)
 //getallcars
 router.get('/allcars',userController.getAllCars)
 
-// //getgeartype cars
-// router.get('/Geartype', userController.getGearTypeCars);
-// //getfueltype cars
-// router.get('/Fueltype',userController.getFuelTypeCars);
-// // Route to get cars based on car types
-// router.get('/carsbycartype', userController.getCarsByCarType);
-// //getsorted price of cars
-// router.get('/SortAscentingType',userController.getSortedCarsinAscenting)
-// router.get('/SortDescentingType',userController.getSortedCarsinDescenting)
 
 //signup
 router.post('/register',userController.registerUser)
@@ -40,14 +31,21 @@ router.get('/newlyarrivedcars',userController.findNewlyArrivedCars)
 //getcategorywise cars
 router.get('/car_list',userController.getCategorywiseCars)
 
+//get carDetail page
+router.get('/car_details',userController.getCarDetails)
 
+
+//search available cars
+router.post('/availableCars',userController.searchAvailableCars)
 
 //userprofile
-router.get('/:userId',userController.getProfileDetails)
-router.post('/updateProfile/:userId',userController.updateProfile)
+router.get('/:userId',auth.verifyUserToken,userController.getProfileDetails)
+router.post('/updateProfile/:userId',auth.verifyUserToken,userController.updateProfile)
 
-//middleware
+//middleware to check blockstatus of user in the privateroute
 router.get('/checkBlockStatus/:userId',userController.checkBlockStatus)
+
+router.post('/carbooking',userController.bookCar)
 
 
 

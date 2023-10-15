@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const adminController = require('../controllers/adminController');
-
+const adminAuth=require('../middlewares/verifyAdminToken')
 const multer = require('multer')
 const path = require('path')
 
@@ -35,33 +35,39 @@ const store = multer({ storage: storage, limits: { fileSize: 1024 * 1024 } });
 // Define a route for the admin login page when accessed with /admin
 router.post('/login', adminController.adminLogin);
 router.post('/home',adminController.loadAdminHome)
-router.get('/userslist',adminController.getUsersList)
-router.put('/userblock/:id',adminController.blockUser)
-router.put('/userunblock/:id',adminController.unblockUser)
-router.get('/vendorslist',adminController.getVendorsList)
-router.put('/vendorblock/:id',adminController.blockVendor)
-router.put('/vendorunblock/:id',adminController.unblockVendor)
-router.put('/userVerificationAccept/:id',adminController.acceptUser)
-router.put('/userVerificationReject/:id',adminController.rejectUser)
-router.put('/vendorVerificationAccept/:id',adminController.acceptVendor)
-router.put('/vendorVerificationReject/:id',adminController.rejectVendor)
+
+router.get('/userslist',adminAuth.verifyAdminToken,adminController.getUsersList)
+
+router.put('/userblock/:id',adminAuth.verifyAdminToken,adminController.blockUser)
+router.put('/userunblock/:id',adminAuth.verifyAdminToken,adminController.unblockUser)
+router.get('/vendorslist',adminAuth.verifyAdminToken,adminController.getVendorsList)
+router.put('/vendorblock/:id',adminAuth.verifyAdminToken,adminController.blockVendor)
+router.put('/vendorunblock/:id',adminAuth.verifyAdminToken,adminController.unblockVendor)
+
+// router.put('/userVerificationAccept/:id',adminController.acceptUser)
+// router.put('/userVerificationReject/:id',adminController.rejectUser)
+// router.put('/vendorVerificationAccept/:id',adminController.acceptVendor)
+// router.put('/vendorVerificationReject/:id',adminController.rejectVendor)
 // router.post('/carTypeRegister',adminController.registerCarType)
 // router.get('/cartypeslist',adminController.getCartypeslist)
 // router.put('/carTypeblock/:id',adminController.blockCarType)
 // router.put('/carTypeunblock/:id',adminController.unblockCarType)
 // router.put('/carTypeEdit/:id',adminController.editCarType)
-router.get('/carslist',adminController.getCarsList);
-router.put('/carblock/:id',adminController.blockCar)
-router.put('/carunblock/:id',adminController.unblockCar);
-router.put('/carrVerificationAccept/:id',adminController.acceptCar)
-router.put('/carrVerificationReject/:id',adminController.rejectCar)
-router.get('/findVendorName/:id',adminController.getVendorName);
-router.post('/addCarousels',store.array('carouselImages', 4),adminController.addCarousel)
-router.get('/carouselslist',adminController.getCarouselList)
-router.delete('/delete-carousel/:carouselId',adminController.deleteCarousel)
-router.put('/editCarousel/:carouselId',store.array('carouselImages', 4),adminController.editCarousel)
-router.get('/loadEditCarousel/:carouselId',adminController.loadEditCarousel)
-router.put('/carouselblock/:id',adminController.blockCarousel)
-router.put('/carouselunblock/:id',adminController.unblockCarousel)
+
+router.get('/carslist',adminAuth.verifyAdminToken,adminController.getCarsList);
+router.put('/carblock/:id',adminAuth.verifyAdminToken,adminController.blockCar)
+router.put('/carunblock/:id',adminAuth.verifyAdminToken,adminController.unblockCar);
+
+router.put('/carrVerificationAccept/:id',adminAuth.verifyAdminToken,adminController.acceptCar)
+router.put('/carrVerificationReject/:id',adminAuth.verifyAdminToken,adminController.rejectCar)
+router.get('/findVendorNameAndAdhar/:id',adminAuth.verifyAdminToken,adminController.getVendorNameAndAdharImages);
+
+router.post('/addCarousels',adminAuth.verifyAdminToken,store.array('carouselImages', 4),adminController.addCarousel)
+router.get('/carouselslist',adminAuth.verifyAdminToken,adminController.getCarouselList)
+router.delete('/delete-carousel/:carouselId',adminAuth.verifyAdminToken,adminController.deleteCarousel)
+router.put('/editCarousel/:carouselId',adminAuth.verifyAdminToken,store.array('carouselImages', 4),adminController.editCarousel)
+router.get('/loadEditCarousel/:carouselId',adminAuth.verifyAdminToken,adminController.loadEditCarousel)
+router.put('/carouselblock/:id',adminAuth.verifyAdminToken,adminController.blockCarousel)
+router.put('/carouselunblock/:id',adminAuth.verifyAdminToken,adminController.unblockCarousel)
 
 module.exports = router;

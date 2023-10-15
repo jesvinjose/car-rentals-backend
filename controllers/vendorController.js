@@ -6,11 +6,13 @@ const vendorOtpCache = new NodeCache();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("cloudinary");
-const secretKey = "jesvinjose49";
+require('dotenv').config();
+const VENDOR_TOKEN_SECRETKEY=process.env.vendortoken_secretKey;
 const Car = require("../models/carModel");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 // const CarType = require("../models/carTypeModel");
+const Booking=require("../models/bookingModel");
 
 const registerVendor = async (req, res) => {
   try {
@@ -57,17 +59,17 @@ const registerVendor = async (req, res) => {
 
     const emailExist = await Vendor.findOne({ emailId: req.body.emailId });
     if (!emailExist) {
-      console.log("Does Email exists-----?" + emailExist);
+      // console.log("Does Email exists-----?" + emailExist);
       let generatedOtp = generateOTP();
       vendorOtpCache.set(emailId, generatedOtp, 60);
       sendOtpMail(emailId, generatedOtp);
-      console.log(generatedOtp, "-------otp here");
+      // console.log(generatedOtp, "-------otp here");
       // Send the OTP in the response to the client
       res.json({ message: "OTP sent successfully", otp: generatedOtp });
-      console.log(
-        generatedOtp,
-        ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-      );
+      // console.log(
+      //   generatedOtp,
+      //   ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+      // );
     } else {
       res.json({ message: "This Vendor Already exists" });
     }
@@ -93,7 +95,7 @@ async function sendOtpMail(email, otp) {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log(result);
+    // console.log(result);
   } catch (error) {
     console.log(error.message);
   }
@@ -130,7 +132,7 @@ const verifyOTP = async (req, res) => {
       });
       await newVendor.save();
       vendorOtpCache.del(emailId);
-      console.log("Verify OTP Success");
+      // console.log("Verify OTP Success");
       res.json({ message: "OTP sent successfully" });
     } else {
       res.json({ message: "wrong OTP" });
@@ -179,7 +181,7 @@ const verifyVendorLogin = async (req, res) => {
           emailId: vendor.emailId, // Include other user-specific data as needed
           firstName: vendor.firstName,
         },
-        secretKey,
+        VENDOR_TOKEN_SECRETKEY,
         {
           expiresIn: "1h", // Set an expiration time for the token
         }
@@ -308,7 +310,6 @@ const getCarsList = async (req, res) => {
   // console.log("Hello getCarslist");
   // console.log(vendorId);
   const carsList = await Car.find({ vendorId: vendorId });
-  // // const carsList = await Car.find();
   // console.log(carsList, "----------carslist---------");
   res.json(carsList);
 };
@@ -378,7 +379,9 @@ const editCarDetails = async (req, res) => {
 };
 
 const registerCar = async (req, res) => {
-  console.log("Register car");
+  const vendorId = req.params.vendorId;
+  console.log(vendorId,"----vendorId-----------");
+  // console.log("Register car");
   try {
     const {
       modelName,
@@ -535,7 +538,7 @@ const googleLogin = async (req, res) => {
           emailId: vendor.emailId, // Include other user-specific data as needed
           firstName: vendor.firstName,
         },
-        secretKey,
+        VENDOR_TOKEN_SECRETKEY,
         {
           expiresIn: "1h", // Set an expiration time for the token
         }
@@ -549,12 +552,79 @@ const googleLogin = async (req, res) => {
         vendorId: vendor._id,
       });
     } else {
-      return res.json({ message: "Invalid User" });
+      return res.json({ message: "Invalid User", email:email });
     }
   } catch (error) {
     console.log(error);
   }
 };
+
+const googleRegistration=async(req,res)=>{
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    mobileNumber,
+  } = req.body;
+  // console.log(req.body, "inside  googleRegistration for the user");
+
+  //Validate firstName
+  if (!firstName || firstName.trim().length === 0) {
+    return res.status(400).json({ message: "Please enter a valid firstName" });
+  }
+
+  // Validate lastName
+  if (!lastName || lastName.trim().length === 0) {
+    return res.status(400).json({ message: "Please enter a valid lastName" });
+  }
+
+  // Validate password
+  if (!password || password.length < 8) {
+    return res.status(400).json({
+      message: "Password should be at least 8 characters long",
+    });
+  }
+
+  // Validate confirm password
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match" });
+  }
+
+  //mobileNumber validation
+  if (!mobileNumber || !validator.isMobilePhone(mobileNumber)) {
+    return res
+      .status(400)
+      .json({ message: "Please enter a valid mobile number" });
+  }
+
+  const securedPassword = await securePassword(password);
+    const newVendor = new Vendor({
+      firstName: firstName,
+      lastName: lastName,
+      emailId: email,
+      mobileNumber: mobileNumber,
+      password: securedPassword,
+      isVerified: true,
+    });
+    await newVendor.save();
+
+    if (newVendor){
+      return res.json({message:"Google registration is success"})
+    }
+    if(!newVendor){
+      return res.json({message:"Google registration is failure"})
+    }
+
+}
+
+const getBookingsList=async(req,res)=>{
+  const vendorId=req.params.vendorId;
+  const bookingData=await Booking.find({vendorId:vendorId})
+  console.log(bookingData,"inside bookingData---");
+  res.json(bookingData)
+}
 
 module.exports = {
   registerVendor,
@@ -572,4 +642,6 @@ module.exports = {
   verifyOTP4PasswordReset,
   confirmNewPassword,
   googleLogin,
+  googleRegistration,
+  getBookingsList
 };
