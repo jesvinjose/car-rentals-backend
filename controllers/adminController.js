@@ -9,7 +9,7 @@ const Car = require("../models/carModel");
 const Carousel = require("../models/carouselModel");
 const cloudinary = require("cloudinary");
 const nodemailer = require("nodemailer");
-
+const Booking=require("../models/bookingModel");
 const adminLogin = async (req, res) => {
   // console.log("hi");
 
@@ -498,6 +498,75 @@ const loadEditCarousel=async(req,res)=>{
   }
 }
 
+const getCompleteBookingList = async (req, res) => {
+  try {
+    const adminEmailId = req.params.adminEmailId;
+    console.log(adminEmailId, "-----adminEmailId");
+    const admin = await Admin.find({ emailId: adminEmailId });
+    if (admin) {
+      const completeBookings = await Booking.find();
+      const completeVendors = await Vendor.find();
+      const completeCars = await Car.find();
+
+      // console.log(completeBookings, "-----completeBookings");
+      // console.log(completeCars, "--------completeCars");
+      // console.log(completeVendors, "--------completeVendors");
+
+      if (!completeBookings) {
+        return res.json({ message: "Bookings not found" });
+      }
+
+      // Define an array to store the combined details
+      const combinedDetails = [];
+
+      // Loop through completeBookings
+      completeBookings.forEach((booking) => {
+        // Find vendor and car details for the booking
+        const vendor = completeVendors.find((v) => v._id.toString() === booking.vendorId.toString());
+        const car = completeCars.find((c) => c._id.toString() === booking.carId.toString());
+
+        if (vendor && car) {
+          // Extract the required details and create an object
+          const details = {
+            // Vendor details
+            aadharFrontImage: vendor.aadharFrontImage,
+            aadharBackImage: vendor.aadharBackImage,
+            firstName: vendor.firstName,
+            emailId: vendor.emailId,
+            // Car details
+            carImage: car.carImage,
+            rcImage: car.rcImage,
+            fuelType: car.fuelType,
+            fuelCapacity: car.fuelCapacity,
+            deliveryHub: car.deliveryHub,
+            dailyRentalRate: car.dailyRentalRate,
+            mileage: car.mileage,
+            gearBoxType: car.gearBoxType,
+            // Additional details from booking
+            modelName: car.modelName,
+            bookingId:booking._id,
+            pickupDate: booking.bookingHistory[0].pickupDate,
+            returnDate: booking.bookingHistory[0].returnDate,
+            Amount: booking.bookingHistory[0].Amount,
+            bookingStatus: booking.bookingHistory[0].bookingStatus,
+          };
+
+          // Add the details object to the combinedDetails array
+          combinedDetails.push(details);
+        }
+      });
+
+      return res.json(combinedDetails);
+    } else {
+      return res.json({ message: "admin not found" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+
 module.exports = {
   addCarousel,
   adminLogin,
@@ -528,5 +597,6 @@ module.exports = {
   editCarousel,
   loadEditCarousel,
   blockCarousel,
-  unblockCarousel
+  unblockCarousel,
+  getCompleteBookingList
 };

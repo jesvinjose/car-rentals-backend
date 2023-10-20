@@ -64,6 +64,9 @@ const userSchema=mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    bookingHistory:{
+        type:Array
+    }
     // verificationStatus: {
     //     type: String,
     //     enum: ["pending", "Approved", "Rejected"],

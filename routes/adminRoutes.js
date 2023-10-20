@@ -70,4 +70,6 @@ router.get('/loadEditCarousel/:carouselId',adminAuth.verifyAdminToken,adminContr
 router.put('/carouselblock/:id',adminAuth.verifyAdminToken,adminController.blockCarousel)
 router.put('/carouselunblock/:id',adminAuth.verifyAdminToken,adminController.unblockCarousel)
 
+router.get('/bookingslist/:adminEmailId',adminAuth.verifyAdminToken,adminController.getCompleteBookingList)
+
 module.exports = router;

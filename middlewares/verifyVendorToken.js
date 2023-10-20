@@ -7,11 +7,11 @@ const Vendor = require("../models/vendorModel");
 const verifyVendorToken = async (req, res, next) => {
   try {
     const authorizationHeader = req.headers.authorization; // Get the token from the request header
-    console.log(authorizationHeader,"authorization Header");
+    // console.log(authorizationHeader,"authorization Header");
     const token = authorizationHeader.split(" ")[1];
     // console.log(token, "inside verifyVendorToken");
       if (token === "undefined") {
-      console.log(token,"inside undefined token");
+      // console.log(token,"inside undefined token");
       return res.status(401).json({ message: "Authentication failed" });
     } else {
       // Verify the token with your secret key

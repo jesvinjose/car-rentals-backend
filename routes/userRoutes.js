@@ -37,6 +37,7 @@ router.get('/car_details',userController.getCarDetails)
 
 //search available cars
 router.post('/availableCars',userController.searchAvailableCars)
+router.post('/check_car_availability',userController.checkAvailability)
 
 //userprofile
 router.get('/:userId',auth.verifyUserToken,userController.getProfileDetails)
@@ -46,6 +47,12 @@ router.post('/updateProfile/:userId',auth.verifyUserToken,userController.updateP
 router.get('/checkBlockStatus/:userId',userController.checkBlockStatus)
 
 router.post('/carbooking',userController.bookCar)
+router.put('/carbooking',userController.editBooking)
+
+router.post('/check_vendor_and_end_trip',userController.enterOtptoEndTrip)
+
+router.get('/bookingslist_user_side/:userId',userController.getBookingHistory)
+router.get('/cancelbooking_user_side/:id',userController.cancelBooking)
 
 
 

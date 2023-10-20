@@ -9,6 +9,12 @@ const bookingSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "Car",
   },
+  startTripOtp:{
+    type:Number,
+  },
+  endTripOtp:{
+    type:Number
+  },
   bookingHistory: [
     {
       pickupDate: {
@@ -25,7 +31,7 @@ const bookingSchema = new mongoose.Schema({
       }, 
       bookingStatus: {
         type: String,
-        enum: ["booked", "running", "cancelled"],
+        enum: ["booked", "running", "cancelled","trip ended"],
         default: "booked",
       },
       Amount: {

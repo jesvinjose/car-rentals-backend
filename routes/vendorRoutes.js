@@ -13,6 +13,7 @@ router.post('/googleregister',vendorController.googleRegistration)
 
 router.get('/carslist/:vendorId', auth.verifyVendorToken,vendorController.getCarsList)
 router.get('/bookingslist/:vendorId',auth.verifyVendorToken,vendorController.getBookingsList)
+router.get('/cancelbooking/:id',auth.verifyVendorToken,vendorController.cancelBooking)
 
 //no use
 // router.get('/cartypes',vendorController.loadCarTypes) 
@@ -33,6 +34,8 @@ router.post('/verifyEmail',vendorController.resetPassword)//to checkEmail
 router.post('/VerifyOTP4PasswordReset4Vendor',vendorController.verifyOTP4PasswordReset)
 router.post('/confirmPasswordReset4Vendor',vendorController.confirmNewPassword)
 
+// Update backend route
+router.post('/check_user_and_deliver_vehicle', vendorController.enterOtpToDeliverCar);
 
 module.exports=router;
 

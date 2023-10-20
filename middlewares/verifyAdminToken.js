@@ -5,15 +5,15 @@ const ADMIN_TOKEN_SECRETKEY = process.env.admintoken_secretKey;
 const verifyAdminToken = (req, res, next) => {
   try {
     const authorizationHeader = req.headers.authorization; // Get the token from the request header
-    console.log(authorizationHeader, "authorization Header");
+    // console.log(authorizationHeader, "authorization Header");
     // Extract the token without the "Bearer " prefix
     const adminToken = authorizationHeader.split(" ")[1];
     // console.log(adminToken, "inside verifyAdminToken");
     if (adminToken === "undefined") {
-      console.log(adminToken, "inside undefined token");
+      // console.log(adminToken, "inside undefined token");
       return res.status(401).json({ message: "Authentication failed" });
     } else {
-      console.log(process.env.admintoken_secretKey, "admintoken secret key");
+      // console.log(process.env.admintoken_secretKey, "admintoken secret key");
       // Verify the admintoken with your secret key
       const decodedAdminToken = jwt.verify(adminToken, ADMIN_TOKEN_SECRETKEY);
       // console.log(decodedAdminToken, "decodedToken");

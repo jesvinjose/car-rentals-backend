@@ -23,7 +23,11 @@ const verifyUserToken = async (req, res, next) => {
       req.userId = decodedToken._id;
       // console.log(req.userId, "req.userId");
       // Continue to the next middleware or route handler
+      // if(token!==decodedToken){
+      //   return res.status(401).json({message:"Invalid token"})
+      // }
       next();
+      
     }
   } catch (error) {
     return res.status(401).json({ message: "Authentication failed" });

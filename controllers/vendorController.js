@@ -6,13 +6,15 @@ const vendorOtpCache = new NodeCache();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("cloudinary");
-require('dotenv').config();
-const VENDOR_TOKEN_SECRETKEY=process.env.vendortoken_secretKey;
+require("dotenv").config();
+const VENDOR_TOKEN_SECRETKEY = process.env.vendortoken_secretKey;
 const Car = require("../models/carModel");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 // const CarType = require("../models/carTypeModel");
-const Booking=require("../models/bookingModel");
+const Booking = require("../models/bookingModel");
+const User = require("../models/userModel");
+const Admin = require("../models/adminModel");
 
 const registerVendor = async (req, res) => {
   try {
@@ -380,7 +382,7 @@ const editCarDetails = async (req, res) => {
 
 const registerCar = async (req, res) => {
   const vendorId = req.params.vendorId;
-  console.log(vendorId,"----vendorId-----------");
+  console.log(vendorId, "----vendorId-----------");
   // console.log("Register car");
   try {
     const {
@@ -552,14 +554,14 @@ const googleLogin = async (req, res) => {
         vendorId: vendor._id,
       });
     } else {
-      return res.json({ message: "Invalid User", email:email });
+      return res.json({ message: "Invalid User", email: email });
     }
   } catch (error) {
     console.log(error);
   }
 };
 
-const googleRegistration=async(req,res)=>{
+const googleRegistration = async (req, res) => {
   const {
     firstName,
     lastName,
@@ -600,31 +602,220 @@ const googleRegistration=async(req,res)=>{
   }
 
   const securedPassword = await securePassword(password);
-    const newVendor = new Vendor({
-      firstName: firstName,
-      lastName: lastName,
-      emailId: email,
-      mobileNumber: mobileNumber,
-      password: securedPassword,
-      isVerified: true,
+  const newVendor = new Vendor({
+    firstName: firstName,
+    lastName: lastName,
+    emailId: email,
+    mobileNumber: mobileNumber,
+    password: securedPassword,
+    isVerified: true,
+  });
+  await newVendor.save();
+
+  if (newVendor) {
+    return res.json({ message: "Google registration is success" });
+  }
+  if (!newVendor) {
+    return res.json({ message: "Google registration is failure" });
+  }
+};
+
+const getBookingsList = async (req, res) => {
+  try {
+    const vendorId = req.params.vendorId;
+    const bookingData = await Booking.find({ vendorId: vendorId });
+
+    // Collect all car IDs from booking data
+    const carIds = bookingData.map((booking) => booking.carId);
+
+    // Retrieve car information for all car IDs
+    const cars = await Car.find({ _id: { $in: carIds } });
+
+    // Create a map of carId to car data for easier lookup
+    const carMap = cars.reduce((acc, car) => {
+      acc[car._id] = car;
+      return acc;
+    }, {});
+
+    // Combine booking data with car information
+    const bookingsWithCars = bookingData.map((booking) => {
+      return {
+        ...booking._doc,
+        car: carMap[booking.carId], // Include car data for each booking
+      };
     });
-    await newVendor.save();
+    console.log(bookingsWithCars, "-----bookingsWithCars");
 
-    if (newVendor){
-      return res.json({message:"Google registration is success"})
-    }
-    if(!newVendor){
-      return res.json({message:"Google registration is failure"})
-    }
+    res.json(bookingsWithCars);
+  } catch (error) {
+    console.error("Error fetching bookings and cars:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
+async function statusEmail(email, message) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "jesvinjose49@gmail.com",
+        pass: "yyrasmmhnslhbidv",
+      },
+    });
+    const mailOptions = {
+      from: "jesvinjose49@gmail.com",
+      to: email,
+      subject: "Your Booking Status",
+      text: message,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    // console.log(result);
+  } catch (error) {
+    console.log(error.message);
+  }
 }
 
-const getBookingsList=async(req,res)=>{
-  const vendorId=req.params.vendorId;
-  const bookingData=await Booking.find({vendorId:vendorId})
-  console.log(bookingData,"inside bookingData---");
-  res.json(bookingData)
-}
+const cancelBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const booking = await Booking.findById(bookingId);
+    // console.log(booking,"-------booking");
+    // console.log("inside cancelBooking");
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const userId = booking.bookingHistory[0]?.userId; // Use optional chaining to safely access nested properties
+    // console.log(userId,"------userId");
+
+    // console.log(user,"--------user------");
+    if (!userId) {
+      return res.status(404).json({ error: "User not found for this booking" });
+    }
+
+    const user = await User.findById(userId);
+    const admin = await Admin.findOne({ emailId: "admin@gmail.com" });
+    if (!admin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    } else {
+      var amountToRefund = 0;
+      // Update the user's booking status
+      user.bookingHistory.forEach((bookingHistoryItem) => {
+        if (bookingHistoryItem.bookingId.toString() === bookingId) {
+          bookingHistoryItem.bookingStatus = "cancelled";
+          amountToRefund += bookingHistoryItem.Amount;
+        }
+      });
+      // console.log(user.bookingHistory, "-----user.bookingHistory");
+      // Mark the array as modified before saving
+      user.markModified("bookingHistory");
+    }
+    user.walletBalance += amountToRefund;
+    await user.save();
+
+    admin.walletBalance -= amountToRefund;
+    await admin.save();
+
+    const userEmail = user.emailId;
+    console.log(userEmail, "----useremail----");
+
+    // Update the booking status to "cancelled"
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      bookingId,
+      {
+        $set: { "bookingHistory.0.bookingStatus": "cancelled" },
+      },
+      { new: true } // Return the updated booking
+    );
+
+    var message =
+      "Booking is cancelled by the vendor, sorry for your inconvenience please book another car";
+    statusEmail(userEmail, message);
+
+    res.json({
+      message: "Booking cancelled successfully",
+      booking: updatedBooking,
+    });
+  } catch (error) {
+    console.error("Error cancelling booking:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const enterOtpToDeliverCar = async (req, res) => {
+  try {
+    const { otpToBeChecked, bookingId, carId, userId } = req.body;
+    console.log(otpToBeChecked, bookingId, carId, userId);
+    console.log("Received Booking ID:", bookingId);
+    // Find the booking
+    const booking = await Booking.findById(bookingId);
+    console.log("Start Trip OTP from booking:", booking.startTripOtp);
+
+    if (!booking) {
+      console.log("Booking not found with the provided bookingId");
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    // Check if the provided OTP matches the startTripOtp
+    console.log(
+      "Comparison result:",
+      booking.startTripOtp === parseInt(otpToBeChecked)
+    );
+    if (booking.startTripOtp !== parseInt(otpToBeChecked)) {
+      return res.status(400).json({ message: "Start trip OTP is wrong" });
+    }
+
+    // Update car delivery status
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+    car.isDelivered = true;
+    await car.save();
+
+    // Update booking status to "running"
+    booking.bookingHistory[0].bookingStatus = "running";
+    await booking.save();
+
+    // Find the user and update booking history
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let bookingIndex = -1;
+
+    // Find the bookingIndex by bookingId
+    user.bookingHistory.forEach((booking, index) => {
+      if (booking.bookingId == bookingId) {
+        bookingIndex = index;
+      }
+    });
+
+    if (bookingIndex !== -1) {
+      user.bookingHistory[bookingIndex].bookingStatus = "running";
+      // Mark the array as modified before saving
+      user.markModified("bookingHistory");
+      await user.save();
+    } else {
+      return res
+        .status(404)
+        .json({ message: "Booking not found in user history" });
+    }
+
+    console.log("Car, booking history in user, and booking details updated");
+    res.json({ message: "Car, booking history, and booking details updated" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 module.exports = {
   registerVendor,
@@ -643,5 +834,7 @@ module.exports = {
   confirmNewPassword,
   googleLogin,
   googleRegistration,
-  getBookingsList
+  getBookingsList,
+  cancelBooking,
+  enterOtpToDeliverCar,
 };
