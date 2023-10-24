@@ -40,7 +40,7 @@ router.post('/availableCars',userController.searchAvailableCars)
 router.post('/check_car_availability',userController.checkAvailability)
 
 //userprofile
-router.get('/:userId',auth.verifyUserToken,userController.getProfileDetails)
+router.get('/:userId',userController.getProfileDetails)
 router.post('/updateProfile/:userId',auth.verifyUserToken,userController.updateProfile)
 
 //middleware to check blockstatus of user in the privateroute

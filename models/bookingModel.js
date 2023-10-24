@@ -31,7 +31,7 @@ const bookingSchema = new mongoose.Schema({
       }, 
       bookingStatus: {
         type: String,
-        enum: ["booked", "running", "cancelled","trip ended"],
+        enum: ["booked", "running", "cancelled","trip ended","booked and car not taken"],
         default: "booked",
       },
       Amount: {
@@ -39,6 +39,10 @@ const bookingSchema = new mongoose.Schema({
       },
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now, // Automatically set the timestamp when a booking is created
+  },
 });
 
 const Booking = mongoose.model("Booking", bookingSchema);

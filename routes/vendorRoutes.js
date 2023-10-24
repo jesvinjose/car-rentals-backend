@@ -18,7 +18,7 @@ router.get('/cancelbooking/:id',auth.verifyVendorToken,vendorController.cancelBo
 //no use
 // router.get('/cartypes',vendorController.loadCarTypes) 
 
-router.post('/registercar/:vendorId',auth.verifyVendorToken,vendorController.registerCar)
+router.post('/registercar/:vendorId',vendorController.registerCar)
 
 router.get('/deletecar/:id',auth.verifyVendorToken,vendorController.deleteCar)
 router.put('/carDataFormEdit/:id',auth.verifyVendorToken,vendorController.editCarDetails)

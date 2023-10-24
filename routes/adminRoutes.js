@@ -33,7 +33,7 @@ const storage = multer.diskStorage({
 const store = multer({ storage: storage, limits: { fileSize: 1024 * 1024 } });
 
 // Define a route for the admin login page when accessed with /admin
-router.post('/login', adminController.adminLogin);
+router.post('/login',adminController.adminLogin);
 router.post('/home',adminController.loadAdminHome)
 
 router.get('/userslist',adminAuth.verifyAdminToken,adminController.getUsersList)
@@ -71,5 +71,7 @@ router.put('/carouselblock/:id',adminAuth.verifyAdminToken,adminController.block
 router.put('/carouselunblock/:id',adminAuth.verifyAdminToken,adminController.unblockCarousel)
 
 router.get('/bookingslist/:adminEmailId',adminAuth.verifyAdminToken,adminController.getCompleteBookingList)
+
+router.get('/stats',adminAuth.verifyAdminToken,adminController.getStatsofAdmin)
 
 module.exports = router;

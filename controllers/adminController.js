@@ -3,13 +3,13 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminModel");
 const User = require("../models/userModel");
 const Vendor = require("../models/vendorModel");
-const ADMIN_TOKEN_SECRETKEY=process.env.admintoken_secretKey;
+const ADMIN_TOKEN_SECRETKEY = process.env.admintoken_secretKey;
 // const CarType = require("../models/carTypeModel");
 const Car = require("../models/carModel");
 const Carousel = require("../models/carouselModel");
 const cloudinary = require("cloudinary");
 const nodemailer = require("nodemailer");
-const Booking=require("../models/bookingModel");
+const Booking = require("../models/bookingModel");
 const adminLogin = async (req, res) => {
   // console.log("hi");
 
@@ -302,7 +302,7 @@ const blockCar = async (req, res) => {
   res.json({ message: "Car blocked successfully" });
 };
 
-const blockCarousel=async (req, res) => {
+const blockCarousel = async (req, res) => {
   const id = req.params.id;
   console.log(id, "id in blockCarousel");
   const carousel = await Carousel.findById(id);
@@ -320,14 +320,14 @@ const unblockCar = async (req, res) => {
   res.json({ message: "Car unblocked successfully" });
 };
 
-const unblockCarousel=async(req,res)=>{
+const unblockCarousel = async (req, res) => {
   const id = req.params.id;
   console.log(id, "id in unblockCarousel");
   const carousel = await Carousel.findById(id);
   carousel.blockStatus = false;
   await carousel.save();
   res.json({ message: "Carousel unblocked successfully" });
-}
+};
 
 const acceptCar = async (req, res) => {
   const id = req.params.id;
@@ -336,10 +336,10 @@ const acceptCar = async (req, res) => {
   car.verificationStatus = "Approved";
   await car.save();
   // console.log(car.vendorId,"--------vendorId of vendor");
-  const vendor=await Vendor.findById(car.vendorId)
+  const vendor = await Vendor.findById(car.vendorId);
   // console.log(vendor,"-------vendor Details-------");
-  console.log(vendor.emailId,"--vendors emailId");
-  var message=`Your car with the following details has been accepted:\n\n
+  console.log(vendor.emailId, "--vendors emailId");
+  var message = `Your car with the following details has been accepted:\n\n
   ModelName: ${car.modelName}\n
   DeliveryHub: ${car.deliveryHub}\n
   FuelCapacity:${car.fuelCapacity}\n
@@ -354,12 +354,12 @@ const acceptCar = async (req, res) => {
   HourlyRentalRate:${car.hourlyRentalRate}\n
   DailyRentalRate:${car.dailyRentalRate}\n
   MonthlyRentalRate:${car.monthlyRentalRate}\n
-  CarLocation:${car.carLocation}\n`
-  statusEmail(vendor.emailId,message)
+  CarLocation:${car.carLocation}\n`;
+  statusEmail(vendor.emailId, message);
   res.json({ message: "Car is Accepted" });
 };
 
-async function statusEmail(email,message) {
+async function statusEmail(email, message) {
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -388,11 +388,11 @@ const rejectCar = async (req, res) => {
   const car = await Car.findById(id);
   car.verificationStatus = "Rejected";
   await car.save();
-    // console.log(car.vendorId,"--------vendorId of vendor");
-    const vendor=await Vendor.findById(car.vendorId)
-    // console.log(vendor,"-------vendor Details-------");
-    console.log(vendor.emailId,"--vendors emailId");
-    var message=`Your car with the following details has been rejected:\n\n
+  // console.log(car.vendorId,"--------vendorId of vendor");
+  const vendor = await Vendor.findById(car.vendorId);
+  // console.log(vendor,"-------vendor Details-------");
+  console.log(vendor.emailId, "--vendors emailId");
+  var message = `Your car with the following details has been rejected:\n\n
     ModelName: ${car.modelName}\n
     DeliveryHub: ${car.deliveryHub}\n
     FuelCapacity:${car.fuelCapacity}\n
@@ -407,10 +407,10 @@ const rejectCar = async (req, res) => {
     HourlyRentalRate:${car.hourlyRentalRate}\n
     DailyRentalRate:${car.dailyRentalRate}\n
     MonthlyRentalRate:${car.monthlyRentalRate}\n
-    CarLocation:${car.carLocation}\n`
-    // ... Add other car details as needed ...\n
-    // \n\nReason for rejection: ${req.body.reason}`;
-    statusEmail(vendor.emailId,message)
+    CarLocation:${car.carLocation}\n`;
+  // ... Add other car details as needed ...\n
+  // \n\nReason for rejection: ${req.body.reason}`;
+  statusEmail(vendor.emailId, message);
   res.json({ message: "Car is Rejected" });
 };
 
@@ -433,10 +433,10 @@ const deleteCarousel = async (req, res) => {
   try {
     // Find the carousel by ID and remove it
     await Carousel.findByIdAndRemove(carouselId);
-    console.log(carouselId,"-------deleting carousel---------");
+    console.log(carouselId, "-------deleting carousel---------");
     res.status(200).json({ message: "Carousel deleted successfully" });
   } catch (error) {
-    console.error('Error deleting carousel:', error);
+    console.error("Error deleting carousel:", error);
     res.status(500).json({ error: "Could not delete carousel" });
   }
 };
@@ -470,7 +470,7 @@ const editCarousel = async (req, res) => {
     //   carouselImages.push(image);
     // });
 
-    const updatedCarousel=await Carousel.findByIdAndUpdate(
+    const updatedCarousel = await Carousel.findByIdAndUpdate(
       { _id: carouselId },
       {
         $set: {
@@ -480,23 +480,23 @@ const editCarousel = async (req, res) => {
         },
       }
     );
-    return res.json(updatedCarousel)
+    return res.json(updatedCarousel);
   } catch (error) {
     console.log(error);
   }
 };
 
-const loadEditCarousel=async(req,res)=>{
+const loadEditCarousel = async (req, res) => {
   try {
     const carouselId = req.params.carouselId;
-    console.log(carouselId,"----carouselId--------");
-    const carousel=await Carousel.findById(carouselId);
-    console.log(carousel,"inside loadEditCarousel");
-    return res.json(carousel)
+    console.log(carouselId, "----carouselId--------");
+    const carousel = await Carousel.findById(carouselId);
+    console.log(carousel, "inside loadEditCarousel");
+    return res.json(carousel);
   } catch (error) {
     console.log(error);
   }
-}
+};
 
 const getCompleteBookingList = async (req, res) => {
   try {
@@ -522,8 +522,12 @@ const getCompleteBookingList = async (req, res) => {
       // Loop through completeBookings
       completeBookings.forEach((booking) => {
         // Find vendor and car details for the booking
-        const vendor = completeVendors.find((v) => v._id.toString() === booking.vendorId.toString());
-        const car = completeCars.find((c) => c._id.toString() === booking.carId.toString());
+        const vendor = completeVendors.find(
+          (v) => v._id.toString() === booking.vendorId.toString()
+        );
+        const car = completeCars.find(
+          (c) => c._id.toString() === booking.carId.toString()
+        );
 
         if (vendor && car) {
           // Extract the required details and create an object
@@ -544,7 +548,7 @@ const getCompleteBookingList = async (req, res) => {
             gearBoxType: car.gearBoxType,
             // Additional details from booking
             modelName: car.modelName,
-            bookingId:booking._id,
+            bookingId: booking._id,
             pickupDate: booking.bookingHistory[0].pickupDate,
             returnDate: booking.bookingHistory[0].returnDate,
             Amount: booking.bookingHistory[0].Amount,
@@ -565,7 +569,36 @@ const getCompleteBookingList = async (req, res) => {
   }
 };
 
+const getStatsofAdmin = async (req, res) => {
+  const userCount = await User.countDocuments();
+  const vendorCount = await Vendor.countDocuments();
+  console.log(userCount,"users count");
+  console.log(vendorCount,"vendors count");
+  // Get the start and end dates of the current week
+  const { startDate, endDate } = getCurrentWeekDates();
+  console.log(startDate);
+  console.log(endDate);
 
+  const totalBookingsThisWeek = await Booking.countDocuments({
+    createdAt: { $gte: startDate, $lte: endDate },
+  });
+  const totalEarningsThisWeek=10000;
+  return res.json({userCount,vendorCount,totalBookingsThisWeek,totalEarningsThisWeek})
+};
+
+function getCurrentWeekDates() {
+  const currentDate = new Date();
+  const currentDay = currentDate.getDay();
+  const startDate = new Date(currentDate);
+  startDate.setDate(currentDate.getDate() - currentDay); // Set the start date to the beginning of the week
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 7); // Set the end date to one week from the start date
+  endDate.setHours(23, 59, 59, 999);
+
+  return { startDate, endDate };
+}
 
 module.exports = {
   addCarousel,
@@ -598,5 +631,6 @@ module.exports = {
   loadEditCarousel,
   blockCarousel,
   unblockCarousel,
-  getCompleteBookingList
+  getCompleteBookingList,
+  getStatsofAdmin,
 };

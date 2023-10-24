@@ -200,6 +200,7 @@ const verifyUserLogin = async (req, res) => {
         lastName: user.lastName,
         emailId: user.emailId,
         userId: user._id,
+        walletBalance:user.walletBalance
       });
     } else {
       // console.log("Wrong Password");
@@ -617,7 +618,7 @@ const getAllCars = async (req, res) => {
     if (sortTypes) {
       let sortDirection = 1; // Default to ascending
 
-      if (sortTypes === "sortPriceHighToLow") {
+      if (sortTypes === "Descending") {
         sortDirection = -1;
       }
 
@@ -628,7 +629,7 @@ const getAllCars = async (req, res) => {
 
     return res.json(cars);
   } catch (error) {
-    console.error("Error fetching cars:", error);
+    console.error("Error fetching cars:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -824,7 +825,7 @@ async function sendOtptoUserthroughEmail(email, otp, bookingId) {
 
 const getBookingHistory = async (req, res) => {
   const userId = req.params.userId;
-  console.log(userId, "-----userId-------");
+  // console.log(userId, "-----userId-------");
 
   try {
     const user = await User.findById(userId).lean();
@@ -850,7 +851,10 @@ const getBookingHistory = async (req, res) => {
       })
     );
 
-    console.log(populatedBookingHistory, "----userInfo-----");
+    // Reverse the order of populatedBookingHistory
+    populatedBookingHistory.reverse();
+
+    // console.log(populatedBookingHistory, "----userInfo-----");
     res.json(populatedBookingHistory);
   } catch (error) {
     console.error("Error fetching booking history:", error);
@@ -1079,14 +1083,14 @@ const editBooking = async (req, res) => {
 
     admin.walletBalance += bookingData.Amount;
     await admin.save();
-    res.status(200).json({message:"user, booking and admin updated"})
+    res.status(200).json({ message: "user, booking and admin updated" });
   } catch (error) {
     console.error("Error editing booking:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const enterOtptoEndTrip=async(req,res)=>{
+const enterOtptoEndTrip = async (req, res) => {
   try {
     const { otpToBeChecked, bookingId, carId, userId } = req.body;
     console.log(otpToBeChecked, bookingId, carId, userId);
@@ -1148,8 +1152,8 @@ const enterOtptoEndTrip=async(req,res)=>{
         .json({ message: "Booking not found in user history" });
     }
 
-    const vendor=await Vendor.findById(booking.vendorId)
-    vendor.walletBalance+=0.9*booking.bookingHistory[0].Amount;
+    const vendor = await Vendor.findById(booking.vendorId);
+    vendor.walletBalance += 0.9 * booking.bookingHistory[0].Amount;
 
     await vendor.save();
 
@@ -1158,16 +1162,15 @@ const enterOtptoEndTrip=async(req,res)=>{
       return res.status(404).json({ error: "Admin not found" });
     }
 
-    admin.walletBalance -= 0.9*booking.bookingHistory[0].Amount;
+    admin.walletBalance -= 0.9 * booking.bookingHistory[0].Amount;
     await admin.save();
 
     console.log("Car, booking history in user, and booking details updated");
     res.json({ message: "Car, booking history, and booking details updated" });
-
   } catch (error) {
     console.log(error);
   }
-}
+};
 
 module.exports = {
   registerUser,
@@ -1193,5 +1196,5 @@ module.exports = {
   getBookingHistory,
   cancelBooking,
   editBooking,
-  enterOtptoEndTrip
+  enterOtptoEndTrip,
 };

@@ -383,7 +383,7 @@ const editCarDetails = async (req, res) => {
 const registerCar = async (req, res) => {
   const vendorId = req.params.vendorId;
   console.log(vendorId, "----vendorId-----------");
-  // console.log("Register car");
+  console.log("Register car");
   try {
     const {
       modelName,
@@ -404,7 +404,7 @@ const registerCar = async (req, res) => {
       monthlyRentalRate,
       carLocation,
     } = req.body;
-    // console.log(req.body,">>>>>>>>>>>");
+    console.log(req.body,">>>>>>>>>>>");
     // console.log(carLocation, "-----carLocation--------");
     // Extract latitude and longitude from carLocation
     const { latitude, longitude } = carLocation;
@@ -438,7 +438,7 @@ const registerCar = async (req, res) => {
     await car.save();
     res.status(201).json({ message: "New Car registered successfully." });
   } catch (error) {
-    console.error("Error registering the car:", error);
+    console.error("Error registering the car:", error.message);
     res.status(500).json({ message: "Server error." });
   }
 };
