@@ -54,6 +54,8 @@ router.post('/check_vendor_and_end_trip',userController.enterOtptoEndTrip)
 router.get('/bookingslist_user_side/:userId',userController.getBookingHistory)
 router.get('/cancelbooking_user_side/:id',userController.cancelBooking)
 
+router.post('/messages',userController.saveMessages)
+
 
 
 

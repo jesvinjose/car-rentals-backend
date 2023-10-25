@@ -11,6 +11,9 @@ const Booking = require("./models/bookingModel");
 const Admin = require("./models/adminModel");
 const Vendor = require("./models/vendorModel");
 const User = require("./models/userModel");
+const http = require("http");
+const Server = require("socket.io").Server;
+const Message = require("./models/messageModel"); // Your message model
 
 const cloudinary = require("cloudinary").v2;
 
@@ -51,9 +54,10 @@ app.use("/admin", adminRoutes);
 app.use("/vendor", vendorRoutes);
 app.use("/payment", paymentRoutes);
 
-app.listen(port, async () => {
+const server1 = app.listen(port, async () => {
   console.log(`Server is running on port ${port}`);
   const admin = await Admin.findOne({ emailId: "admin@gmail.com" });
+
   // console.log(admin.walletBalance);
   cron.schedule("0 0 * * *", async () => {
     try {
@@ -106,3 +110,107 @@ app.listen(port, async () => {
   });
 });
 
+// console.log("before io");
+// // const server = http.createServer(app);
+// // const io = new Server(server1, {
+// //   cors: {
+// //     origin: "*",
+// //   },
+// // });
+// const io=new Server(server1,{cors:true})
+
+// io.on("connection", (socket) => {
+//   console.log("socket we are connected");
+
+//   socket.on("chat", (chat) => {
+//     io.emit("chat", chat);
+//   });
+
+//   socket.on("disconnect", () => {
+//     console.log("disconnected");
+//   });
+// });
+
+// server.listen(4500, () => {
+//   console.log('Socket.IO server is running on port 4500');
+// })
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+// io.on("connection", (socket) => {
+//   console.log("we are connected");
+
+//   socket.on("chat", (chat) => {
+//     io.emit("chat", chat);
+//   });
+
+//   socket.on("disconnect", () => {
+//     console.log("disconnected");
+//   });
+// });
+
+// io.on("connection", (socket) => {
+//   socket.on("joinChat", (bookingId, userId, vendorId) => {
+//     const roomName = `${bookingId}-${userId}-${vendorId}`;
+//     socket.join(roomName);
+//     console.log(`User joined room: ${roomName}`);
+
+//     // Handle chat events within the room
+//     socket.on("chat", async (chat) => {
+//       try {
+//         console.log(chat,"--------chat here");
+//         // Save the chat message to the database
+//         // const message = new Message({
+//         //   room: roomName, // Room or context identifier
+//         //   sender: chat.user,
+//         //   message: chat.message,
+//         // });
+
+//         // await message.save();
+//         // // Broadcast the chat message to all participants in the room
+//         io.to(roomName).emit("chat", chat);
+//       } catch (error) {
+//         console.error("Error saving chat message:", error);
+//       }
+//     });
+
+//     socket.on("disconnect", () => {
+//       console.log("User disconnected");
+//     });
+//   });
+// });
+
+io.on("connection", (socket) => {
+  socket.on("joinChat", (bookingId, userId, vendorId) => {
+    const roomName = `${bookingId}-${userId}-${vendorId}`;
+    socket.join(roomName);
+    console.log(`User joined room: ${roomName}`);
+
+    // Handle chat events within the room
+    socket.on("chat",(chat) => {
+
+      // Save the chat message to the database
+        // const message = new Message({
+        //   room: roomName, // Room or context identifier
+        //   sender: chat.user,
+        //   message: chat.message,
+        // });
+
+        // message.save();
+      io.to(roomName).emit("chat", chat);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("User disconnected");
+    });
+  });
+});
+
+server.listen(4500, () => {
+  console.log("Listening to 4500");
+});

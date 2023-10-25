@@ -13,6 +13,7 @@ const Carousel = require("../models/carouselModel");
 const Booking = require("../models/bookingModel");
 const Admin = require("../models/adminModel");
 const mongoose = require("mongoose");
+const Message=require("../models/messageModel");
 
 // const secretKey = "jesvinjose";
 require("dotenv").config();
@@ -1172,6 +1173,26 @@ const enterOtptoEndTrip = async (req, res) => {
   }
 };
 
+const saveMessages=async(req,res)=>{
+  try {
+    const { chatUsers, message, sender } = req.body;
+    // Create a new message instance
+    const newMessage = new Message({
+      chatUsers,
+      message,
+      sender,
+    });
+
+    // Save the message to the database
+    await newMessage.save();
+
+    res.status(201).json({ message: 'Message saved successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to save the message' });
+  }
+}
+
 module.exports = {
   registerUser,
   verifyOTP,
@@ -1197,4 +1218,5 @@ module.exports = {
   cancelBooking,
   editBooking,
   enterOtptoEndTrip,
+  saveMessages
 };

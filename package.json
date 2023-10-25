@@ -26,6 +26,7 @@
     "node-cron": "^3.0.2",
     "nodemailer": "^6.9.5",
     "razorpay": "^2.9.2",
+    "socket.io": "^4.7.2",
     "validator": "^13.11.0"
   }
 }
