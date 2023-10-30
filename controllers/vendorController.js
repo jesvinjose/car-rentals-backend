@@ -404,7 +404,7 @@ const registerCar = async (req, res) => {
       monthlyRentalRate,
       carLocation,
     } = req.body;
-    console.log(req.body,">>>>>>>>>>>");
+    console.log(req.body, ">>>>>>>>>>>");
     // console.log(carLocation, "-----carLocation--------");
     // Extract latitude and longitude from carLocation
     const { latitude, longitude } = carLocation;
@@ -817,6 +817,205 @@ const enterOtpToDeliverCar = async (req, res) => {
   }
 };
 
+const getStatsofVendor = async (req, res) => {
+  try {
+    const vendorId = req.params.vendorId;
+
+    // Use the `countDocuments` method to count the bookings with the specified vendorId
+    const totalBookings = await Booking.countDocuments({ vendorId });
+
+    const { startDate, endDate } = getCurrentWeekDates();
+    console.log(startDate);
+    console.log(endDate);
+
+    const totalBookingsThisWeek = await Booking.countDocuments({
+      $and: [
+        { createdAt: { $gte: startDate, $lte: endDate } },
+        { vendorId: vendorId },
+      ],
+    });
+
+    let totalEarningsThisWeek;
+    totalEarningsThisWeek =
+      0.9 * (await calculateTotalBookingAmountWithinWeek(vendorId));
+
+    return res.json({
+      totalBookings,
+      totalBookingsThisWeek,
+      totalEarningsThisWeek,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+function getCurrentWeekDates() {
+  const currentDate = new Date();
+  const currentDay = currentDate.getUTCDay(); // Use getUTCDay to avoid time zone offsets
+  const daysUntilSunday = 0 - currentDay;
+  const daysUntilSaturday = 6 - currentDay;
+
+  const startDate = new Date(currentDate);
+  startDate.setUTCDate(currentDate.getUTCDate() + daysUntilSunday); // Set the start date to the beginning of the week (Sunday)
+  startDate.setUTCHours(0, 0, 0, 0);
+
+  const endDate = new Date(currentDate);
+  endDate.setUTCDate(currentDate.getUTCDate() + daysUntilSaturday); // Set the end date to the end of the week (Saturday)
+  endDate.setUTCHours(23, 59, 59, 999);
+
+  return { startDate, endDate };
+}
+
+async function calculateTotalBookingAmountWithinWeek(vendorId) {
+  try {
+    const { startDate, endDate } = getCurrentWeekDates();
+    console.log(startDate, endDate, "------startWeekDate and endWeekDate ");
+
+    const result = await Booking.aggregate([
+      {
+        $match: {
+          "bookingHistory.0.bookingStatus": {
+            $in: ["trip ended", "booked and car not taken"],
+          },
+          vendorId: vendorId,
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+          // 'bookingHistory.0.pickupDate': {
+          //   $gte: { $toDate: startMonthDate },
+          //   $lte: { $toDate: endMonthDate }
+          // }
+        },
+      },
+      {
+        $unwind: "$bookingHistory",
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: {
+            $sum: "$bookingHistory.Amount",
+          },
+        },
+      },
+    ]);
+
+    console.log(
+      result,
+      "---------bookings for calculateTotalBookingAmountWithinWeek"
+    );
+
+    if (result.length > 0) {
+      return result[0].totalEarnings;
+    } else {
+      return 0;
+    }
+
+    //   const totalEarnings = [];
+    //   let total = 0
+
+    //    result.map(el => el.bookingHistory)
+    //     .forEach(val => {
+    //       val.forEach(a => {
+    //         console.log(a);
+    //         // console.log(startMonthDate.toString(), endMonthDate.toString(), new Date(a.returnDate)  );
+    //         if (new Date(a.pickupDate) > startDate && new Date(a.returnDate) < endDate) {
+    //           totalEarnings.push(a);
+    //         }
+    //       })
+    //     });
+
+    //     totalEarnings.forEach(e => total += e.Amount)
+
+    // //  console.log(bookingHistory, 'ellllllllllllllllllllllll')
+    //  console.log(totalEarnings, 'dddddddddddddd', total)
+    //   return total;
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+const getBookingsvsMonthChartInVendor = async (req, res) => {
+  try {
+    const vendorId = req.params.vendorId;
+    console.log(vendorId, "---------vendorId");
+    const bookingData = await Booking.find({ vendorId: vendorId }, "createdAt");
+
+    // Process the data to count the number of bookings per month
+    const chartData = {};
+    bookingData.forEach((booking) => {
+      const createdAt = new Date(booking.createdAt);
+      const year = createdAt.getFullYear();
+      const month = createdAt.getMonth() + 1; // Months are zero-based, so add 1
+      const key = `${year}-${month}`;
+
+      if (chartData[key]) {
+        chartData[key]++;
+      } else {
+        chartData[key] = 1;
+      }
+    });
+
+    // Prepare the data for the chart in a format that your charting library expects
+    const chartDataArray = Object.entries(chartData).map(([key, count]) => ({
+      month: key,
+      count,
+    }));
+
+    // Query to get earnings data for the specified vendor
+    // const data = await Booking.aggregate([
+    //   {
+    //     $match: {
+    //       vendorId: vendorId, // Replace vendorId with the value you're searching for
+    //     },
+    //   },
+    // ]);
+    // console.log("data is ", data);
+
+    const earningsData = await Booking.aggregate([
+      {
+        $match: {
+          // vendorId: vendorId, // Filter by vendorId
+          "bookingHistory": {
+            $elemMatch: {
+              "bookingStatus": {
+                $in: ["trip ended", "booked and car not taken"]
+              }
+            }
+          }
+        }
+      },
+      {
+        $unwind: "$bookingHistory" // Unwind the array to create a separate document for each booking
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          totalEarnings: { $sum: "$bookingHistory.Amount" }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          totalEarnings: { $multiply: ["$totalEarnings", 0.9] } // Calculate 10% of totalEarnings
+        }
+      }
+    ]);
+
+    console.log(earningsData, "-------earningsData");
+
+    return res.json({ chartDataArray, earningsData });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   registerVendor,
   verifyOTP,
@@ -837,4 +1036,73 @@ module.exports = {
   getBookingsList,
   cancelBooking,
   enterOtpToDeliverCar,
+  getStatsofVendor,
+  getBookingsvsMonthChartInVendor,
 };
+
+// const getBookingsvsDateChartInVendor=async(req,res)=>{
+//   try {
+//     const vendorId=req.params.vendorId;
+//     const bookingData = await Booking.find({vendorId:vendorId}, 'createdAt'); // Fetch the 'createdAt' field
+
+//     // Process the data to count the number of bookings for each date
+//     const chartData = {};
+//     bookingData.forEach((booking) => {
+//       const date = booking.createdAt.toISOString().split('T')[0];
+//       if (chartData[date]) {
+//         chartData[date]++;
+//       } else {
+//         chartData[date] = 1;
+//       }
+//     });
+
+//     // Prepare the data for the chart in a format that your charting library expects
+//     const chartDataArray = Object.entries(chartData).map(([date, count]) => ({
+//       date,
+//       count,
+//     }));
+//     console.log(chartDataArray,"----------chartDataArray");
+//     return res.json(chartDataArray);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+
+// }
+
+// async function calculateTotalBookingAmountWithinWeek(vendorId) {
+//   try {
+//     const { startDate, endDate } = getCurrentWeekDates();
+
+//     const result = await Booking.aggregate([
+//       {
+//         $match: {
+//           'bookingHistory': {
+//             $elemMatch: {
+//               'bookingStatus': { $in: ['trip ended', 'booked and car not taken'] },
+//               'pickupDate': { $gte: startDate, $lte: endDate }
+//             }
+//           },
+//           "vendorId": vendorId
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: null, // Group all documents into a single group
+//           totalAmount: {
+//             $sum: { $arrayElemAt: ['$bookingHistory.Amount', 0] } // Calculate the sum of Amount in the first element of bookingHistory
+//           }
+//         }
+//       }
+//     ]);
+
+//     if (result.length > 0) {
+//       return result[0].totalAmount;
+//     } else {
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//     return 0;
+//   }
+// }

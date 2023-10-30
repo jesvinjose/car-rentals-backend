@@ -56,10 +56,7 @@ router.get('/cancelbooking_user_side/:id',userController.cancelBooking)
 
 router.post('/messages',userController.saveMessages)
 
-
-
-
-
+router.get('/get_wallet_balance/:userId',userController.getWalletBalance)
 
 
 

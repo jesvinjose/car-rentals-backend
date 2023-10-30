@@ -73,5 +73,7 @@ router.put('/carouselunblock/:id',adminAuth.verifyAdminToken,adminController.unb
 router.get('/bookingslist/:adminEmailId',adminAuth.verifyAdminToken,adminController.getCompleteBookingList)
 
 router.get('/stats',adminAuth.verifyAdminToken,adminController.getStatsofAdmin)
+router.get('/bookings-vs-date-earnings-vs-month',adminController.getBookingsvsMonthandEarningsvsMonthChartInAdmin)
+// router.get('/earnings-vs-month',adminController.getEarningsvsMonthChartInAdmin)
 
 module.exports = router;

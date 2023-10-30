@@ -59,7 +59,7 @@ const loadAdminHome = (req, res) => {
   // Check if the user has a valid token (authentication)
   const token = req.headers.authorization;
   // console.log("Loaded Home");
-  console.log(token);
+  // console.log(token);
   if (!token) {
     // No token provided, return an unauthorized status
     return res.status(401).json({ message: "Unauthorized" });
@@ -87,8 +87,8 @@ const loadAdminHome = (req, res) => {
 // Function to add a new carousel
 const addCarousel = async (req, res) => {
   try {
-    console.log(req.body, "------------------");
-    console.log(req.files, "--------------");
+    // console.log(req.body, "------------------");
+    // console.log(req.files, "--------------");
     const { carouselName, carouselDescription } = req.body;
     // const carouselImages = req.files['carouselImages']; // Correctly access carouselImages
     // console.log(carouselImages, ";;;;;;;;;;;;;;;;;;;;;;;;");
@@ -112,7 +112,7 @@ const addCarousel = async (req, res) => {
           .json({ error: "Error uploading image to Cloudinary" });
       }
     }
-    console.log(imageUrls, "---------------");
+    // console.log(imageUrls, "---------------");
 
     // Create a new carousel instance with image URLs
     const newCarousel = new Carousel({
@@ -121,10 +121,10 @@ const addCarousel = async (req, res) => {
       carouselDescription,
     });
 
-    console.log(newCarousel, "---------newCarousel----------");
+    // console.log(newCarousel, "---------newCarousel----------");
     // Save the new carousel to the database
     await newCarousel.save();
-    console.log(imageUrls, "imageUrls----------");
+    // console.log(imageUrls, "imageUrls----------");
 
     res.status(201).json(newCarousel);
   } catch (error) {
@@ -159,7 +159,7 @@ const unblockVendor = async (req, res) => {
 
 const blockVendor = async (req, res) => {
   // console.log("inside block");
-  console.log(req.params.id, "this is the id of vendor");
+  // console.log(req.params.id, "this is the id of vendor");
   const vendor = await Vendor.findByIdAndUpdate(req.params.id);
   vendor.blockStatus = true;
   await vendor.save();
@@ -295,7 +295,7 @@ const getCarsList = async (req, res) => {
 
 const blockCar = async (req, res) => {
   const id = req.params.id;
-  console.log(id, "id in blockCar");
+  // console.log(id, "id in blockCar");
   const car = await Car.findById(id);
   car.blockStatus = true;
   await car.save();
@@ -304,7 +304,7 @@ const blockCar = async (req, res) => {
 
 const blockCarousel = async (req, res) => {
   const id = req.params.id;
-  console.log(id, "id in blockCarousel");
+  // console.log(id, "id in blockCarousel");
   const carousel = await Carousel.findById(id);
   carousel.blockStatus = true;
   await carousel.save();
@@ -322,7 +322,7 @@ const unblockCar = async (req, res) => {
 
 const unblockCarousel = async (req, res) => {
   const id = req.params.id;
-  console.log(id, "id in unblockCarousel");
+  // console.log(id, "id in unblockCarousel");
   const carousel = await Carousel.findById(id);
   carousel.blockStatus = false;
   await carousel.save();
@@ -338,7 +338,7 @@ const acceptCar = async (req, res) => {
   // console.log(car.vendorId,"--------vendorId of vendor");
   const vendor = await Vendor.findById(car.vendorId);
   // console.log(vendor,"-------vendor Details-------");
-  console.log(vendor.emailId, "--vendors emailId");
+  // console.log(vendor.emailId, "--vendors emailId");
   var message = `Your car with the following details has been accepted:\n\n
   ModelName: ${car.modelName}\n
   DeliveryHub: ${car.deliveryHub}\n
@@ -384,14 +384,14 @@ async function statusEmail(email, message) {
 
 const rejectCar = async (req, res) => {
   const id = req.params.id;
-  console.log(id, "id in rejectCar");
+  // console.log(id, "id in rejectCar");
   const car = await Car.findById(id);
   car.verificationStatus = "Rejected";
   await car.save();
   // console.log(car.vendorId,"--------vendorId of vendor");
   const vendor = await Vendor.findById(car.vendorId);
   // console.log(vendor,"-------vendor Details-------");
-  console.log(vendor.emailId, "--vendors emailId");
+  // console.log(vendor.emailId, "--vendors emailId");
   var message = `Your car with the following details has been rejected:\n\n
     ModelName: ${car.modelName}\n
     DeliveryHub: ${car.deliveryHub}\n
@@ -424,7 +424,7 @@ const getVendorNameAndAdharImages = async (req, res) => {
 
 const getCarouselList = async (req, res) => {
   const carousel = await Carousel.find({ blockStatus: false });
-  console.log(carousel);
+  // console.log(carousel);
   return res.json(carousel);
 };
 
@@ -433,7 +433,7 @@ const deleteCarousel = async (req, res) => {
   try {
     // Find the carousel by ID and remove it
     await Carousel.findByIdAndRemove(carouselId);
-    console.log(carouselId, "-------deleting carousel---------");
+    // console.log(carouselId, "-------deleting carousel---------");
     res.status(200).json({ message: "Carousel deleted successfully" });
   } catch (error) {
     console.error("Error deleting carousel:", error);
@@ -489,9 +489,9 @@ const editCarousel = async (req, res) => {
 const loadEditCarousel = async (req, res) => {
   try {
     const carouselId = req.params.carouselId;
-    console.log(carouselId, "----carouselId--------");
+    // console.log(carouselId, "----carouselId--------");
     const carousel = await Carousel.findById(carouselId);
-    console.log(carousel, "inside loadEditCarousel");
+    // console.log(carousel, "inside loadEditCarousel");
     return res.json(carousel);
   } catch (error) {
     console.log(error);
@@ -501,7 +501,7 @@ const loadEditCarousel = async (req, res) => {
 const getCompleteBookingList = async (req, res) => {
   try {
     const adminEmailId = req.params.adminEmailId;
-    console.log(adminEmailId, "-----adminEmailId");
+    // console.log(adminEmailId, "-----adminEmailId");
     const admin = await Admin.find({ emailId: adminEmailId });
     if (admin) {
       const completeBookings = await Booking.find();
@@ -570,35 +570,219 @@ const getCompleteBookingList = async (req, res) => {
 };
 
 const getStatsofAdmin = async (req, res) => {
-  const userCount = await User.countDocuments();
-  const vendorCount = await Vendor.countDocuments();
-  console.log(userCount,"users count");
-  console.log(vendorCount,"vendors count");
-  // Get the start and end dates of the current week
-  const { startDate, endDate } = getCurrentWeekDates();
-  console.log(startDate);
-  console.log(endDate);
+  try {
+    const userCount = await User.countDocuments();
+    const vendorCount = await Vendor.countDocuments();
+    const carCount = await Car.countDocuments();
 
-  const totalBookingsThisWeek = await Booking.countDocuments({
-    createdAt: { $gte: startDate, $lte: endDate },
-  });
-  const totalEarningsThisWeek=10000;
-  return res.json({userCount,vendorCount,totalBookingsThisWeek,totalEarningsThisWeek})
+    // Get the start and end dates of the current week
+    const { startDate, endDate } = getCurrentWeekDates();
+
+    const totalBookingsThisWeek = await Booking.countDocuments({
+      createdAt: { $gte: startDate, $lte: endDate },
+    });
+    // console.log(calculateTotalBookingAmountWithinWeek());
+    // console.log("---above---");
+    let totalEarningsThisWeek;
+    let x = await calculateEarningsThisWeek();
+    totalEarningsThisWeek = 0.1 * x;
+
+    let totalEarningsThisMonth;
+    let y = await calculateEarningsPerMonth();
+    totalEarningsThisMonth = 0.1 * y;
+    // console.log(totalEarningsThisMonth, "-----totalEarningsThisMonth");
+    // console.log(totalEarningsThisWeek, "---------totalEarningsThisWeek");
+    return res.json({
+      userCount,
+      carCount,
+      vendorCount,
+      totalBookingsThisWeek,
+      totalEarningsThisWeek,
+      totalEarningsThisMonth,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
+
+async function calculateEarningsThisWeek() {
+  try {
+    const { weekStartDate, weekEndDate } = getCurrentWeekDates();
+
+    const result = await Booking.aggregate([
+      {
+        $match: {
+          "bookingHistory.bookingStatus": {
+            $in: ["trip ended", "booked and car not taken"],
+          },
+          createdAt: {
+            $gte: weekStartDate,
+            $lte: weekEndDate,
+          },
+        },
+      },
+      {
+        $unwind: "$bookingHistory"
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: {
+            $sum: "$bookingHistory.Amount"
+          },
+        },
+      },
+    ]);
+
+    if (result.length > 0) {
+      return result[0].totalEarnings;
+    } else {
+      return 0;
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    return 0;
+  }
+}
+
 
 function getCurrentWeekDates() {
   const currentDate = new Date();
-  const currentDay = currentDate.getDay();
-  const startDate = new Date(currentDate);
-  startDate.setDate(currentDate.getDate() - currentDay); // Set the start date to the beginning of the week
-  startDate.setHours(0, 0, 0, 0);
+  const currentDay = currentDate.getUTCDay(); // Use getUTCDay to avoid time zone offsets
+  const daysUntilSunday = 0 - currentDay;
+  const daysUntilSaturday = 6 - currentDay;
 
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + 7); // Set the end date to one week from the start date
-  endDate.setHours(23, 59, 59, 999);
+  const startDate = new Date(currentDate);
+  startDate.setUTCDate(currentDate.getUTCDate() + daysUntilSunday); // Set the start date to the beginning of the week (Sunday)
+  startDate.setUTCHours(0, 0, 0, 0);
+
+  const endDate = new Date(currentDate);
+  endDate.setUTCDate(currentDate.getUTCDate() + daysUntilSaturday); // Set the end date to the end of the week (Saturday)
+  endDate.setUTCHours(23, 59, 59, 999);
 
   return { startDate, endDate };
 }
+
+async function calculateEarningsPerMonth() {
+  try {
+    const { startMonthDate, endMonthDate } = getCurrentMonthDates();
+
+    const result = await Booking.aggregate([
+      {
+        $match: {
+          "bookingHistory.bookingStatus": {
+            $in: ["trip ended", "booked and car not taken"],
+          },
+          createdAt: {
+            $gte: startMonthDate,
+            $lte: endMonthDate,
+          },
+        },
+      },
+      {
+        $unwind: "$bookingHistory"
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: {
+            $sum: "$bookingHistory.Amount"
+          },
+        },
+      },
+    ]);
+
+    // console.log(result,"------------result");
+    if (result.length > 0) {
+      return result[0].totalEarnings;
+    } else {
+      return 0;
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    return 0;
+  }
+}
+
+function getCurrentMonthDates() {
+  const currentDate = new Date();
+  const year = currentDate.getUTCFullYear();
+  const month = currentDate.getUTCMonth();
+
+  // Calculate the first day of the current month
+  const startMonthDate = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+
+  // Calculate the last day of the current month
+  const endMonthDate = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+  return { startMonthDate, endMonthDate };
+}
+
+const getBookingsvsMonthandEarningsvsMonthChartInAdmin = async (req, res) => {
+  try {
+    const bookingData = await Booking.find({}, "createdAt"); // Fetch the 'createdAt' field
+
+    // Process the data to count the number of bookings for each date
+    const chartData = {};
+    bookingData.forEach((booking) => {
+      const createdAt = new Date(booking.createdAt);
+      const year = createdAt.getFullYear();
+      const month = createdAt.getMonth() + 1; // Months are zero-based, so add 1
+      const key = `${year}-${month}`;
+
+      if (chartData[key]) {
+        chartData[key]++;
+      } else {
+        chartData[key] = 1;
+      }
+    });
+
+    // Prepare the data for the chart in a format that your charting library expects
+    const chartDataArray = Object.entries(chartData).map(([key, count]) => ({
+      month: key,
+      count,
+    }));
+
+    const earningsData = await Booking.aggregate([
+      {
+        $match: {
+          "bookingHistory": {
+            $elemMatch: {
+              "bookingStatus": {
+                $in: ["trip ended", "booked and car not taken"]
+              }
+            }
+          }
+        }
+      },
+      {
+        $unwind: "$bookingHistory" // Unwind the array to create a separate document for each booking
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          totalEarnings: { $sum: "$bookingHistory.Amount" }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          totalEarnings: { $multiply: ["$totalEarnings", 0.1] } // Calculate 10% of totalEarnings
+        }
+      }
+    ]);    
+    
+    console.log(earningsData, "-------earningsData");
+    return res.json({chartDataArray,earningsData});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 module.exports = {
   addCarousel,
@@ -633,4 +817,215 @@ module.exports = {
   unblockCarousel,
   getCompleteBookingList,
   getStatsofAdmin,
+  getBookingsvsMonthandEarningsvsMonthChartInAdmin,
+  // getEarningsvsMonthChartInAdmin,
 };
+
+
+// async function calculateTotalBookingAmountWithinWeek() {
+//   try {
+//     const { startDate, endDate } = getCurrentWeekDates();
+
+//     console.log(startDate, endDate, "-------startDate and endDate");
+
+//     // const result = await Booking.aggregate([
+//     //   {
+//     //     $match: {
+//     //       'bookingHistory.bookingStatus': { $in: ['trip ended', 'booked and car not taken'] },
+//     //       'bookingHistory.pickupDate': { $gte: startDate, $lte: endDate }
+//     //     }
+//     //   },
+//     //   {
+//     //     $group: {
+//     //       _id: null, // Group all documents into a single group
+//     //       totalAmount: {
+//     //         $sum: '$bookingHistory.0.Amount' // Calculate the sum of Amount in the first element of bookingHistory
+//     //       }
+//     //     }
+//     //   }
+//     // ]);
+
+//     const result = await Booking.aggregate([
+//       {
+//         $match: {
+//           "bookingHistory.bookingStatus": {
+//             $in: ["trip ended", "booked and car not taken"],
+//           },
+//           "bookingHistory.pickupDate": {
+//             $gte: { $toDate: startDate },
+//             $lte: { $toDate: endDate },
+//           },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: null,
+//           totalAmount: {
+//             $sum: "$bookingHistory.0.Amount",
+//           },
+//         },
+//       },
+//     ]);
+
+//     console.log(result, "----result");
+
+//     if (result.length > 0) {
+//       // console.log('Total Amount within the current week:', result[0].totalAmount);
+//       return result[0].totalAmount;
+//     } else {
+//       // console.log('No earnings within the current week.');
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return 0;
+//   }
+// }
+
+// const getBookingsvsDateChartInAdmin = async (req, res) => {
+//   try {
+//     const bookingData = await Booking.find({}, 'createdAt'); // Fetch the 'createdAt' field
+
+//     // Process the data to count the number of bookings for each date
+//     const chartData = {};
+//     bookingData.forEach((booking) => {
+//       const date = booking.createdAt.toISOString().split('T')[0];
+//       if (chartData[date]) {
+//         chartData[date]++;
+//       } else {
+//         chartData[date] = 1;
+//       }
+//     });
+
+//     // Prepare the data for the chart in a format that your charting library expects
+//     const chartDataArray = Object.entries(chartData).map(([date, count]) => ({
+//       date,
+//       count,
+//     }));
+//     console.log(chartDataArray,"----------chartDataArray");
+//     return res.json(chartDataArray);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// };
+
+// async function calculateEarningsPerMonth() {
+//   try {
+//     console.log("inside calculateEarningsPerMonth");
+//     const { startMonthDate, endMonthDate } = getCurrentMonthDates();
+//     console.log(startMonthDate,endMonthDate,"------startMonthDate and endMonthDate ");
+
+//     const result = await Booking.find({
+//       'bookingHistory[0].bookingStatus': { $in: ['trip ended', 'booked and car not taken'] },
+//       'bookingHistory[0].pickupDate': { $gte: startMonthDate, $lte: endMonthDate }
+//     });
+
+//     console.log(result,"--------result");
+//     if (result.length > 0) {
+//       // Calculate earnings per month
+//       const monthlyEarnings = {};
+
+//       result.forEach((booking) => {
+//         if (booking.bookingHistory[0] && booking.bookingHistory[0].Amount !== null && booking.bookingHistory[0].Amount !== undefined) {
+//           const monthYear = booking.bookingHistory[0].pickupDate.substring(0, 7); // Extract YYYY-MM
+//           if (!monthlyEarnings[monthYear]) {
+//             monthlyEarnings[monthYear] = 0;
+//           }
+//           monthlyEarnings[monthYear] += booking.bookingHistory[0].Amount;
+//         }
+//       });
+//       console.log(monthlyEarnings,"------monthlyEarnings");
+
+//       return monthlyEarnings;
+//     } else {
+//       return {};
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//     return {};
+//   }
+// }
+
+// async function calculateEarningsPerMonth() {
+//   try {
+//     const { startMonthDate, endMonthDate } = getCurrentMonthDates();
+//     // console.log(
+//     //   startMonthDate,
+//     //   endMonthDate,
+//     //   "------startMonthDate and endMonthDate "
+//     // );
+
+//     // const result = await Booking.aggregate([
+//     //   {
+//     //     $match: {
+//     //       "bookingHistory.0.bookingStatus": {
+//     //         $in: ["trip ended", "booked and car not taken"],
+//     //       },
+//     //       // 'bookingHistory.0.pickupDate': {
+//     //       //   $gte: { $toDate: startMonthDate },
+//     //       //   $lte: { $toDate: endMonthDate }
+//     //       // }
+//     //     },
+//     //   },
+//     // ]);
+
+//     const result = await Booking.aggregate([
+//       {
+//         $match: {
+//           "bookingHistory.bookingStatus": {
+//             $in: ["trip ended", "booked and car not taken"],
+//           },
+//           createdAt: {
+//             $gte: startMonthDate,
+//             $lte: endMonthDate,
+//           },
+//         },
+//       },
+//       {
+//         $unwind: "$bookingHistory"
+//       },
+//       {
+//         $group: {
+//           _id: null,
+//           totalEarnings: {
+//             $sum: "$bookingHistory.Amount"
+//           },
+//         },
+//       },
+//     ]);
+
+//     // const totalEarnings = [];
+//     // let total = 0;
+
+//     // result
+//     //   .map((el) => el.bookingHistory)
+//     //   .forEach((val) => {
+//     //     val.forEach((a) => {
+//     //       // console.log(a);
+//     //       // console.log(startMonthDate.toString(), endMonthDate.toString(), new Date(a.returnDate)  );
+//     //       if (
+//     //         new Date(a.pickupDate) > startMonthDate &&
+//     //         new Date(a.returnDate) < endMonthDate
+//     //       ) {
+//     //         totalEarnings.push(a);
+//     //       }
+//     //     });
+//     //   });
+
+//     // totalEarnings.forEach((e) => (total += e.Amount));
+
+//     // //  console.log(bookingHistory, 'ellllllllllllllllllllllll')
+//     // // console.log(totalEarnings, "dddddddddddddd", total);
+//     // return total;
+//     console.log(result,"------------result");
+//     if (result.length > 0) {
+//       return (result[0].totalEarnings*0.1);
+//     } else {
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//     return 0;
+//   }
+// }

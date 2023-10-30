@@ -21,7 +21,7 @@ router.post("/orders", async (req, res) => {
     };
 
     const order = await instance.orders.create(options);
-    console.log(order,"----order--------");
+    // console.log(order,"----order--------");
     if (!order) return res.status(500).send("Some error occured");
 
     res.json(order);

@@ -14,7 +14,8 @@ const Booking = require("../models/bookingModel");
 const Admin = require("../models/adminModel");
 const mongoose = require("mongoose");
 const Message=require("../models/messageModel");
-
+const { response } = require("express");
+const { ObjectId } = require('mongodb');
 // const secretKey = "jesvinjose";
 require("dotenv").config();
 const USER_TOKEN_SECRETKEY = process.env.usertoken_secretKey;
@@ -889,10 +890,12 @@ async function statusEmail(email, message) {
 const cancelBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
+    console.log(bookingId,"-------bookingId");
     const booking = await Booking.findById(bookingId);
     console.log(booking, "-------booking");
     console.log("inside cancelBooking");
     const vendorId = booking.vendorId;
+    console.log(vendorId,"---------vendor");
     console.log(vendorId, "------vendorId");
 
     const vendor = await Vendor.findById(vendorId);
@@ -948,8 +951,12 @@ const cancelBooking = async (req, res) => {
     user.walletBalance += amountToRefund;
     await user.save();
 
-    admin.walletBalance -= amountToRefund;
-    await admin.save();
+
+    //No need to subtract here admin wallet is to be increased only when the trip ends or at the end of
+    //return date if car not taken
+
+    // admin.walletBalance -= amountToRefund;
+    // await admin.save();
 
     const vendorEmail = vendor.emailId;
 
@@ -970,7 +977,7 @@ const cancelBooking = async (req, res) => {
 
 const bookCar = async (req, res) => {
   try {
-    console.log(req.body, "inside bookCar");
+    // console.log(req.body, "inside bookCar");
 
     // Extract carId and bookingData correctly
     const { carId, bookingData } = req.body;
@@ -1026,8 +1033,11 @@ const bookCar = async (req, res) => {
       return res.status(404).json({ error: "Admin not found" });
     }
 
-    admin.walletBalance += Amount;
-    await admin.save();
+    //No need to add amount to Admin wallet now as it is added with 10% commission at end of trip or end of
+    //return date if car not taken
+
+    // admin.walletBalance += Amount; 
+    // await admin.save();
 
     // The above line updates the walletBalance for the admin with the given emailId
 
@@ -1082,8 +1092,10 @@ const editBooking = async (req, res) => {
       return res.status(404).json({ error: "Admin not found" });
     }
 
-    admin.walletBalance += bookingData.Amount;
-    await admin.save();
+    //Editting admin balance not required now as we add commission when trip ends or at end of
+    //return date if car not taken 
+    // admin.walletBalance += bookingData.Amount;
+    // await admin.save();
     res.status(200).json({ message: "user, booking and admin updated" });
   } catch (error) {
     console.error("Error editing booking:", error);
@@ -1163,7 +1175,9 @@ const enterOtptoEndTrip = async (req, res) => {
       return res.status(404).json({ error: "Admin not found" });
     }
 
-    admin.walletBalance -= 0.9 * booking.bookingHistory[0].Amount;
+    // admin.walletBalance -= 0.9 * booking.bookingHistory[0].Amount;
+    
+    admin.walletBalance += 0.1 * booking.bookingHistory[0].Amount;
     await admin.save();
 
     console.log("Car, booking history in user, and booking details updated");
@@ -1193,6 +1207,34 @@ const saveMessages=async(req,res)=>{
   }
 }
 
+function isValidObjectIdString(str) {
+  // A valid ObjectId is a 24-character hexadecimal string
+  const objectIdPattern = /^[0-9a-fA-F]{24}$/;
+  return objectIdPattern.test(str);
+}
+
+const getWalletBalance=async(req,res)=>{
+  try {
+    if (isValidObjectIdString(req.params.userId)) {
+      const objectId = new ObjectId(req.params.userId)
+    } else {
+      console.error('Invalid ObjectId string');
+    }
+    let userId= new ObjectId(req.params.userId); // Extract the userId from route parameters
+    // console.log(userId,"----userId");
+    if (!userId) {
+      return res.status(400).json({ error: 'Invalid userId' });
+    }
+    let user=await User.findById(userId);
+    let walletBalance=user.walletBalance;
+    return res.json({walletBalance})
+    
+  } catch (error) {
+    console.log(error);
+  }
+
+}
+
 module.exports = {
   registerUser,
   verifyOTP,
@@ -1218,5 +1260,6 @@ module.exports = {
   cancelBooking,
   editBooking,
   enterOtptoEndTrip,
-  saveMessages
+  saveMessages,
+  getWalletBalance
 };

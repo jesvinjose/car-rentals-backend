@@ -37,6 +37,9 @@ router.post('/confirmPasswordReset4Vendor',vendorController.confirmNewPassword)
 // Update backend route
 router.post('/check_user_and_deliver_vehicle', vendorController.enterOtpToDeliverCar);
 
+router.get('/stats/:vendorId',vendorController.getStatsofVendor)
+router.get('/bookings-vs-date/:vendorId',vendorController.getBookingsvsMonthChartInVendor)
+
 module.exports=router;
 
 

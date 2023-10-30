@@ -54,7 +54,14 @@ app.use("/admin", adminRoutes);
 app.use("/vendor", vendorRoutes);
 app.use("/payment", paymentRoutes);
 
-const server1 = app.listen(port, async () => {
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+const server1 = server.listen(port, async () => {
   console.log(`Server is running on port ${port}`);
   const admin = await Admin.findOne({ emailId: "admin@gmail.com" });
 
@@ -97,7 +104,12 @@ const server1 = app.listen(port, async () => {
           // console.log(vendor.walletBalance, "initial");
           vendor.walletBalance += 0.9 * bookings[i].bookingHistory[0].Amount;
           // console.log(vendor.walletBalance);
-          admin.walletBalance -= 0.9 * bookings[i].bookingHistory[0].Amount;
+
+          //No need to subtract here admin wallet is to be increased only when the trip ends or at the end of
+          //return date if car not taken
+          // admin.walletBalance -= 0.9 * bookings[i].bookingHistory[0].Amount;
+
+          admin.walletBalance += 0.1 * bookings[i].bookingHistory[0].Amount;
           // console.log(admin.walletBalance);
           await vendor.save();
           await admin.save();
@@ -134,13 +146,6 @@ const server1 = app.listen(port, async () => {
 // server.listen(4500, () => {
 //   console.log('Socket.IO server is running on port 4500');
 // })
-
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
 
 // io.on("connection", (socket) => {
 //   console.log("we are connected");
@@ -192,16 +197,15 @@ io.on("connection", (socket) => {
     console.log(`User joined room: ${roomName}`);
 
     // Handle chat events within the room
-    socket.on("chat",(chat) => {
-
+    socket.on("chat", (chat) => {
       // Save the chat message to the database
-        // const message = new Message({
-        //   room: roomName, // Room or context identifier
-        //   sender: chat.user,
-        //   message: chat.message,
-        // });
+      // const message = new Message({
+      //   room: roomName, // Room or context identifier
+      //   sender: chat.user,
+      //   message: chat.message,
+      // });
 
-        // message.save();
+      // message.save();
       io.to(roomName).emit("chat", chat);
     });
 
@@ -211,6 +215,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(4500, () => {
-  console.log("Listening to 4500");
-});
+// server.listen(4500, () => {
+//   console.log("Listening to 4500");
+// });
