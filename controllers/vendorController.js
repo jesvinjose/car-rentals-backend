@@ -644,9 +644,12 @@ const getBookingsList = async (req, res) => {
         car: carMap[booking.carId], // Include car data for each booking
       };
     });
-    console.log(bookingsWithCars, "-----bookingsWithCars");
+    // console.log(bookingsWithCars, "-----bookingsWithCars");
 
-    res.json(bookingsWithCars);
+    // Reverse the bookingsWithCars array
+    const reversedBookingsWithCars = bookingsWithCars.reverse();
+
+    res.json(reversedBookingsWithCars);
   } catch (error) {
     console.error("Error fetching bookings and cars:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -964,7 +967,7 @@ const getBookingsvsMonthChartInVendor = async (req, res) => {
       count,
     }));
 
-    // Query to get earnings data for the specified vendor
+    //Query to get earnings data for the specified vendor
     // const data = await Booking.aggregate([
     //   {
     //     $match: {
@@ -974,42 +977,91 @@ const getBookingsvsMonthChartInVendor = async (req, res) => {
     // ]);
     // console.log("data is ", data);
 
-    const earningsData = await Booking.aggregate([
-      {
-        $match: {
-          // vendorId: vendorId, // Filter by vendorId
-          "bookingHistory": {
-            $elemMatch: {
-              "bookingStatus": {
-                $in: ["trip ended", "booked and car not taken"]
-              }
-            }
-          }
-        }
-      },
-      {
-        $unwind: "$bookingHistory" // Unwind the array to create a separate document for each booking
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" }
-          },
-          totalEarnings: { $sum: "$bookingHistory.Amount" }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          totalEarnings: { $multiply: ["$totalEarnings", 0.9] } // Calculate 10% of totalEarnings
-        }
+    // const earningsData = await Booking.aggregate([
+    //   {
+    //     $match: {
+    //       // "vendorId": vendorId, // Filter by vendorId
+    //       bookingHistory: {
+    //         $elemMatch: {
+    //           bookingStatus: {
+    //             $in: ["trip ended", "booked and car not taken"],
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $unwind: "$bookingHistory", // Unwind the array to create a separate document for each booking
+    //   },
+    //   {
+    //     $group: {
+    //       _id: {
+    //         year: { $year: "$createdAt" },
+    //         month: { $month: "$createdAt" },
+    //       },
+    //       totalEarnings: { $sum: "$bookingHistory.Amount" },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 1,
+    //       totalEarnings: { $multiply: ["$totalEarnings", 0.9] }, // Calculate 90% of totalEarnings
+    //     },
+    //   },
+    // ]);
+
+    // console.log(earningsData, "-------earningsData");
+
+    const data = await Booking.find({
+      "vendorId": vendorId,
+      "bookingHistory.bookingStatus": { $in: ["trip ended", "booked and car not taken"] }
+    });
+    
+    //Grouping by year and month
+    const groupedData = data.reduce((result, item) => {
+      const createdAt = item.createdAt;
+      const year = createdAt.getFullYear();
+      const month = createdAt.getMonth() + 1; // Month is 0-based, so add 1
+    
+      if (!result[year]) {
+        result[year] = {};
       }
-    ]);
+    
+      if (!result[year][month]) {
+        result[year][month] = [];
+      }
+    
+      result[year][month].push(item);
+      return result;
+    }, {});
+    
+    //Calculate total earnings and apply the 0.9 factor
+    const aggregatedData = [];
+    
+    for (const year in groupedData) {
+      for (const month in groupedData[year]) {
+        const monthData = groupedData[year][month];
+        const totalEarnings = monthData.reduce((sum, item) => sum + item.bookingHistory[0].Amount, 0);
+        const earningsWithFactor = totalEarnings * 0.9;
+    
+        // aggregatedData.push({
+        //   year: parseInt(year),
+        //   month: parseInt(month),
+        //   totalEarnings: earningsWithFactor,
+        // });
+        aggregatedData.push({
+          _id: {
+            year: parseInt(year),
+            month: parseInt(month),
+          },
+          totalEarnings: earningsWithFactor,
+        });
+      }
+    }
+    
+    console.log("Aggregated data:", aggregatedData);
 
-    console.log(earningsData, "-------earningsData");
-
-    return res.json({ chartDataArray, earningsData });
+    return res.json({ chartDataArray, aggregatedData });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
