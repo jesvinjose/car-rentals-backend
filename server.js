@@ -2,7 +2,7 @@ const express = require("express");
 const connectDB = require("./db"); // Import the database configuration file
 const app = express();
 require("dotenv").config();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const cron = require("node-cron");
