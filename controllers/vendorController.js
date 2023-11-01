@@ -875,66 +875,37 @@ async function calculateTotalBookingAmountWithinWeek(vendorId) {
     const { startDate, endDate } = getCurrentWeekDates();
     console.log(startDate, endDate, "------startWeekDate and endWeekDate ");
 
-    const result = await Booking.aggregate([
-      {
-        $match: {
-          "bookingHistory.0.bookingStatus": {
-            $in: ["trip ended", "booked and car not taken"],
-          },
-          vendorId: vendorId,
-          createdAt: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-          // 'bookingHistory.0.pickupDate': {
-          //   $gte: { $toDate: startMonthDate },
-          //   $lte: { $toDate: endMonthDate }
-          // }
-        },
+    const bookings = await Booking.find({
+      vendorId: vendorId,
+      "bookingHistory.0.bookingStatus": {
+        $in: ["trip ended", "booked and car not taken"],
       },
-      {
-        $unwind: "$bookingHistory",
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate,
       },
-      {
-        $group: {
-          _id: null,
-          totalEarnings: {
-            $sum: "$bookingHistory.Amount",
-          },
-        },
-      },
-    ]);
+    });
+
+    let totalEarnings = 0;
+
+    bookings.forEach((booking) => {
+      booking.bookingHistory.forEach((entry) => {
+        // Check if the entry falls within the current week.
+        if (
+          new Date(entry.pickupDate) >= startDate &&
+          new Date(entry.returnDate) <= endDate
+        ) {
+          totalEarnings += entry.Amount;
+        }
+      });
+    });
 
     console.log(
-      result,
-      "---------bookings for calculateTotalBookingAmountWithinWeek"
+      totalEarnings,
+      "---------total earnings for calculateTotalBookingAmountWithinWeek"
     );
 
-    if (result.length > 0) {
-      return result[0].totalEarnings;
-    } else {
-      return 0;
-    }
-
-    //   const totalEarnings = [];
-    //   let total = 0
-
-    //    result.map(el => el.bookingHistory)
-    //     .forEach(val => {
-    //       val.forEach(a => {
-    //         console.log(a);
-    //         // console.log(startMonthDate.toString(), endMonthDate.toString(), new Date(a.returnDate)  );
-    //         if (new Date(a.pickupDate) > startDate && new Date(a.returnDate) < endDate) {
-    //           totalEarnings.push(a);
-    //         }
-    //       })
-    //     });
-
-    //     totalEarnings.forEach(e => total += e.Amount)
-
-    // //  console.log(bookingHistory, 'ellllllllllllllllllllllll')
-    //  console.log(totalEarnings, 'dddddddddddddd', total)
-    //   return total;
+    return totalEarnings;
   } catch (error) {
     console.error("Error:", error);
   }
@@ -966,16 +937,6 @@ const getBookingsvsMonthChartInVendor = async (req, res) => {
       month: key,
       count,
     }));
-
-    //Query to get earnings data for the specified vendor
-    // const data = await Booking.aggregate([
-    //   {
-    //     $match: {
-    //       vendorId: vendorId, // Replace vendorId with the value you're searching for
-    //     },
-    //   },
-    // ]);
-    // console.log("data is ", data);
 
     // const earningsData = await Booking.aggregate([
     //   {
@@ -1013,42 +974,42 @@ const getBookingsvsMonthChartInVendor = async (req, res) => {
     // console.log(earningsData, "-------earningsData");
 
     const data = await Booking.find({
-      "vendorId": vendorId,
-      "bookingHistory.bookingStatus": { $in: ["trip ended", "booked and car not taken"] }
+      vendorId: vendorId,
+      "bookingHistory.bookingStatus": {
+        $in: ["trip ended", "booked and car not taken"],
+      },
     });
-    
+
     //Grouping by year and month
     const groupedData = data.reduce((result, item) => {
       const createdAt = item.createdAt;
       const year = createdAt.getFullYear();
       const month = createdAt.getMonth() + 1; // Month is 0-based, so add 1
-    
+
       if (!result[year]) {
         result[year] = {};
       }
-    
+
       if (!result[year][month]) {
         result[year][month] = [];
       }
-    
+
       result[year][month].push(item);
       return result;
     }, {});
-    
+
     //Calculate total earnings and apply the 0.9 factor
     const aggregatedData = [];
-    
+
     for (const year in groupedData) {
       for (const month in groupedData[year]) {
         const monthData = groupedData[year][month];
-        const totalEarnings = monthData.reduce((sum, item) => sum + item.bookingHistory[0].Amount, 0);
+        const totalEarnings = monthData.reduce(
+          (sum, item) => sum + item.bookingHistory[0].Amount,
+          0
+        );
         const earningsWithFactor = totalEarnings * 0.9;
-    
-        // aggregatedData.push({
-        //   year: parseInt(year),
-        //   month: parseInt(month),
-        //   totalEarnings: earningsWithFactor,
-        // });
+
         aggregatedData.push({
           _id: {
             year: parseInt(year),
@@ -1058,7 +1019,7 @@ const getBookingsvsMonthChartInVendor = async (req, res) => {
         });
       }
     }
-    
+
     console.log("Aggregated data:", aggregatedData);
 
     return res.json({ chartDataArray, aggregatedData });
@@ -1091,6 +1052,13 @@ module.exports = {
   getStatsofVendor,
   getBookingsvsMonthChartInVendor,
 };
+
+
+
+
+
+
+
 
 // const getBookingsvsDateChartInVendor=async(req,res)=>{
 //   try {
@@ -1156,5 +1124,115 @@ module.exports = {
 //   } catch (error) {
 //     console.error('Error:', error);
 //     return 0;
+//   }
+// }
+
+// async function calculateTotalBookingAmountWithinWeek(vendorId) {
+//   try {
+//     const { startDate, endDate } = getCurrentWeekDates();
+
+//     const result = await Booking.aggregate([
+//       {
+//         $match: {
+//           bookingHistory: {
+//             $elemMatch: {
+//               bookingStatus: {
+//                 $in: ["trip ended", "booked and car not taken"],
+//               },
+//               pickupDate: { $gte: startDate, $lte: endDate },
+//             },
+//           },
+//           vendorId: vendorId,
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: null, // Group all documents into a single group
+//           totalAmount: {
+//             $sum: { $arrayElemAt: ["$bookingHistory.Amount", 0] }, // Calculate the sum of Amount in the first element of bookingHistory
+//           },
+//         },
+//       },
+//     ]);
+
+//     console.log(
+//       result,
+//       "---------bookings for calculateTotalBookingAmountWithinWeek"
+//     );
+
+//     if (result.length > 0) {
+//       return result[0].totalAmount;
+//     } else {
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return 0;
+//   }
+// }
+
+// async function calculateTotalBookingAmountWithinWeek(vendorId) {
+//   try {
+//     const { startDate, endDate } = getCurrentWeekDates();
+//     console.log(startDate, endDate, "------startWeekDate and endWeekDate ");
+
+//     const result = await Booking.aggregate([
+//       {
+//         $match: {
+//           "bookingHistory.0.bookingStatus": {
+//             $in: ["trip ended", "booked and car not taken"],
+//           },
+//           vendorId: vendorId,
+//           createdAt: {
+//             $gte: startDate,
+//             $lte: endDate,
+//           },
+//         },
+//       },
+//       {
+//         $unwind: "$bookingHistory",
+//       },
+//       {
+//         $group: {
+//           _id: null,
+//           totalEarnings: {
+//             $sum: "$bookingHistory.Amount",
+//           },
+//         },
+//       },
+//     ]);
+
+//     console.log(
+//       result,
+//       "---------bookings for calculateTotalBookingAmountWithinWeek"
+//     );
+
+//     if (result.length > 0) {
+//       return result[0].totalEarnings;
+//     } else {
+//       return 0;
+//     }
+
+//   const totalEarnings = [];
+//   let total = 0
+
+//    result.map(el => el.bookingHistory)
+//     .forEach(val => {
+//       val.forEach(a => {
+//         console.log(a);
+// console.log(startMonthDate.toString(), endMonthDate.toString(), new Date(a.returnDate)  );
+//         if (new Date(a.pickupDate) > startDate && new Date(a.returnDate) < endDate) {
+//           totalEarnings.push(a);
+//         }
+//       })
+//     });
+
+//     totalEarnings.forEach(e => total += e.Amount)
+
+//  console.log(bookingHistory, 'ellllllllllllllllllllllll')
+//  console.log(totalEarnings, 'dddddddddddddd', total)
+//   return total;
+//   } catch (error) {
+//     console.error("Error:", error);
 //   }
 // }

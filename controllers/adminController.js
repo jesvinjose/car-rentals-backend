@@ -818,7 +818,6 @@ module.exports = {
   getCompleteBookingList,
   getStatsofAdmin,
   getBookingsvsMonthandEarningsvsMonthChartInAdmin,
-  // getEarningsvsMonthChartInAdmin,
 };
 
 

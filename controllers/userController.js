@@ -78,10 +78,10 @@ const registerUser = async (req, res) => {
     res
       .status(200)
       .json({ message: "OTP sent successfully", otp: generatedOtp });
-    console.log(
-      generatedOtp,
-      ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-    );
+    // console.log(
+    //   generatedOtp,
+    //   ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    // );
   } else {
     res.status(400).json({ message: "This User Already exists" });
   }

@@ -2,7 +2,7 @@ const express = require("express");
 const connectDB = require("./db"); // Import the database configuration file
 const app = express();
 require("dotenv").config();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const cron = require("node-cron");
@@ -80,9 +80,12 @@ const server1 = server.listen(port, async () => {
       const bookings = await Booking.find();
       // console.log(bookings[0]);
       for (let i = 0; i < bookings.length; i++) {
+        // if(bookings[i].bookingHistory[0].returnDate<=formattedDate && bookings[i].bookingHistory[0].bookingStatus === "booked"){
+        //   console.log(bookings[i]._id,"------booking id");
+        // }
         if (
           bookings[i].bookingHistory[0].bookingStatus === "booked" &&
-          bookings[i].bookingHistory[0].returnDate >= formattedDate
+          bookings[i].bookingHistory[0].returnDate <= formattedDate
         ) {
           bookings[i].bookingHistory[0].bookingStatus =
             "booked and car not taken";
