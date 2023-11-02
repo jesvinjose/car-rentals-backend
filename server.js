@@ -85,7 +85,7 @@ const server1 = server.listen(port, async () => {
         // }
         if (
           bookings[i].bookingHistory[0].bookingStatus === "booked" &&
-          bookings[i].bookingHistory[0].returnDate <= formattedDate
+          bookings[i].bookingHistory[0].returnDate === formattedDate
         ) {
           bookings[i].bookingHistory[0].bookingStatus =
             "booked and car not taken";
