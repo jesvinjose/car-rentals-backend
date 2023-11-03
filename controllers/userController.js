@@ -13,9 +13,9 @@ const Carousel = require("../models/carouselModel");
 const Booking = require("../models/bookingModel");
 const Admin = require("../models/adminModel");
 const mongoose = require("mongoose");
-const Message=require("../models/messageModel");
+const Message = require("../models/messageModel");
 const { response } = require("express");
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require("mongodb");
 // const secretKey = "jesvinjose";
 require("dotenv").config();
 const USER_TOKEN_SECRETKEY = process.env.usertoken_secretKey;
@@ -202,7 +202,7 @@ const verifyUserLogin = async (req, res) => {
         lastName: user.lastName,
         emailId: user.emailId,
         userId: user._id,
-        walletBalance:user.walletBalance
+        walletBalance: user.walletBalance,
       });
     } else {
       // console.log("Wrong Password");
@@ -721,8 +721,8 @@ const checkAvailability = async (req, res) => {
   try {
     const overlappingBookings = await Booking.find({
       carId: carId,
-      "bookingHistory.pickupDate": { $lt: returnDate },
-      "bookingHistory.returnDate": { $gt: pickupDate },
+      "bookingHistory.pickupDate": { $lte: returnDate },
+      "bookingHistory.returnDate": { $gte: pickupDate },
       "bookingHistory.bookingStatus": "booked",
     });
 
@@ -890,12 +890,12 @@ async function statusEmail(email, message) {
 const cancelBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
-    console.log(bookingId,"-------bookingId");
+    console.log(bookingId, "-------bookingId");
     const booking = await Booking.findById(bookingId);
     console.log(booking, "-------booking");
     console.log("inside cancelBooking");
     const vendorId = booking.vendorId;
-    console.log(vendorId,"---------vendor");
+    console.log(vendorId, "---------vendor");
     console.log(vendorId, "------vendorId");
 
     const vendor = await Vendor.findById(vendorId);
@@ -950,7 +950,6 @@ const cancelBooking = async (req, res) => {
     }
     user.walletBalance += amountToRefund;
     await user.save();
-
 
     //No need to subtract here admin wallet is to be increased only when the trip ends or at the end of
     //return date if car not taken
@@ -1024,6 +1023,7 @@ const bookCar = async (req, res) => {
       returnDate: bookingData.returnDate,
       bookingStatus: "booked",
       Amount: Amount,
+      createdAt:newBooking.createdAt
     });
 
     await user.save();
@@ -1036,7 +1036,7 @@ const bookCar = async (req, res) => {
     //No need to add amount to Admin wallet now as it is added with 10% commission at end of trip or end of
     //return date if car not taken
 
-    // admin.walletBalance += Amount; 
+    // admin.walletBalance += Amount;
     // await admin.save();
 
     // The above line updates the walletBalance for the admin with the given emailId
@@ -1093,7 +1093,7 @@ const editBooking = async (req, res) => {
     }
 
     //Editting admin balance not required now as we add commission when trip ends or at end of
-    //return date if car not taken 
+    //return date if car not taken
     // admin.walletBalance += bookingData.Amount;
     // await admin.save();
     res.status(200).json({ message: "user, booking and admin updated" });
@@ -1176,7 +1176,7 @@ const enterOtptoEndTrip = async (req, res) => {
     }
 
     // admin.walletBalance -= 0.9 * booking.bookingHistory[0].Amount;
-    
+
     admin.walletBalance += 0.1 * booking.bookingHistory[0].Amount;
     await admin.save();
 
@@ -1187,7 +1187,7 @@ const enterOtptoEndTrip = async (req, res) => {
   }
 };
 
-const saveMessages=async(req,res)=>{
+const saveMessages = async (req, res) => {
   try {
     const { chatUsers, message, sender } = req.body;
     // Create a new message instance
@@ -1200,12 +1200,12 @@ const saveMessages=async(req,res)=>{
     // Save the message to the database
     await newMessage.save();
 
-    res.status(201).json({ message: 'Message saved successfully' });
+    res.status(201).json({ message: "Message saved successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Failed to save the message' });
+    res.status(500).json({ message: "Failed to save the message" });
   }
-}
+};
 
 function isValidObjectIdString(str) {
   // A valid ObjectId is a 24-character hexadecimal string
@@ -1213,27 +1213,60 @@ function isValidObjectIdString(str) {
   return objectIdPattern.test(str);
 }
 
-const getWalletBalance=async(req,res)=>{
+const getWalletBalance = async (req, res) => {
   try {
     if (isValidObjectIdString(req.params.userId)) {
-      const objectId = new ObjectId(req.params.userId)
+      const objectId = new ObjectId(req.params.userId);
     } else {
-      console.error('Invalid ObjectId string');
+      console.error("Invalid ObjectId string");
     }
-    let userId= new ObjectId(req.params.userId); // Extract the userId from route parameters
+    let userId = new ObjectId(req.params.userId); // Extract the userId from route parameters
     // console.log(userId,"----userId");
     if (!userId) {
-      return res.status(400).json({ error: 'Invalid userId' });
+      return res.status(400).json({ error: "Invalid userId" });
     }
-    let user=await User.findById(userId);
-    let walletBalance=user.walletBalance;
-    return res.json({walletBalance})
-    
+    let user = await User.findById(userId);
+    let walletBalance = user.walletBalance;
+    return res.json({ walletBalance });
   } catch (error) {
     console.log(error);
   }
+};
 
-}
+const sendMessageToOwner = async (req, res) => {
+  try {
+    // console.log("inside sendMessageToOwner");
+    // console.log(req.body,"-------from body");
+    const { name, email, subject, message } = req.body;
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // e.g., 'Gmail', 'SMTP', etc.
+      auth: {
+        user: "jesvinjose49@gmail.com",
+        pass: "yyrasmmhnslhbidv",
+      },
+    });
+    // Create an email message
+    const mailOptions = {
+      from: "email", // Replace with your email
+      to: "car4rentalss@gmail.com", // Replace with your company's email
+      subject: subject,
+      text: `Name: ${name}\nCustomer Email: ${email}\n\nMessage: ${message}`,
+    };
+
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error sending email" });
+      } else {
+        console.log("Email sent: " + info.response);
+        res.json({ message: "Email sent successfully" });
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 module.exports = {
   registerUser,
@@ -1261,5 +1294,6 @@ module.exports = {
   editBooking,
   enterOtptoEndTrip,
   saveMessages,
-  getWalletBalance
+  getWalletBalance,
+  sendMessageToOwner,
 };

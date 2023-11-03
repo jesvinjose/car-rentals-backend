@@ -58,6 +58,8 @@ router.post('/messages',userController.saveMessages)
 
 router.get('/get_wallet_balance/:userId',userController.getWalletBalance)
 
+router.post('/submit-message',userController.sendMessageToOwner)
+
 
 
 // router.post('/addCar',verifyUserToken,userController.addCar)
