@@ -40,6 +40,9 @@ router.post('/check_user_and_deliver_vehicle', vendorController.enterOtpToDelive
 router.get('/stats/:vendorId',vendorController.getStatsofVendor)
 router.get('/bookings-vs-date-earnings-vs-month/:vendorId',vendorController.getBookingsvsMonthChartInVendor)
 
+// router.post('/senting-message',vendorController.saveMessages)
+// router.post('/getMessage',vendorController.getMessages)
+
 module.exports=router;
 
 

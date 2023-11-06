@@ -54,12 +54,14 @@ router.post('/check_vendor_and_end_trip',userController.enterOtptoEndTrip)
 router.get('/bookingslist_user_side/:userId',userController.getBookingHistory)
 router.get('/cancelbooking_user_side/:id',userController.cancelBooking)
 
-router.post('/messages',userController.saveMessages)
+// router.post('/messages',userController.saveMessages)
 
 router.get('/get_wallet_balance/:userId',userController.getWalletBalance)
 
 router.post('/submit-message',userController.sendMessageToOwner)
 
+// router.post('/senting-message',userController.saveMessages)
+// router.post('/getMessage',userController.getMessages)
 
 
 // router.post('/addCar',verifyUserToken,userController.addCar)

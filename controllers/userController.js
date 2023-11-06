@@ -13,9 +13,10 @@ const Carousel = require("../models/carouselModel");
 const Booking = require("../models/bookingModel");
 const Admin = require("../models/adminModel");
 const mongoose = require("mongoose");
-const Message = require("../models/messageModel");
+const messageModel = require("../models/messageModel");
 const { response } = require("express");
 const { ObjectId } = require("mongodb");
+const { Mongoose } = require("mongoose");
 // const secretKey = "jesvinjose";
 require("dotenv").config();
 const USER_TOKEN_SECRETKEY = process.env.usertoken_secretKey;
@@ -890,7 +891,7 @@ async function statusEmail(email, message) {
 const cancelBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
-    console.log(bookingId, "-------bookingId");
+    // console.log(bookingId, "-------bookingId");
     const booking = await Booking.findById(bookingId);
     console.log(booking, "-------booking");
     console.log("inside cancelBooking");
@@ -1023,7 +1024,7 @@ const bookCar = async (req, res) => {
       returnDate: bookingData.returnDate,
       bookingStatus: "booked",
       Amount: Amount,
-      createdAt:newBooking.createdAt
+      createdAt: newBooking.createdAt,
     });
 
     await user.save();
@@ -1187,25 +1188,147 @@ const enterOtptoEndTrip = async (req, res) => {
   }
 };
 
-const saveMessages = async (req, res) => {
-  try {
-    const { chatUsers, message, sender } = req.body;
-    // Create a new message instance
-    const newMessage = new Message({
-      chatUsers,
-      message,
-      sender,
-    });
+// const saveMessages = async (req, res) => {
+//   try {
+//     console.log(req.body,"-----------req.body-----------");
+//     const { bookingId, userId, vendorId, message, sender } = req.body;
+//     const roomName = `${bookingId}-${userId}-${vendorId}`;
+//     console.log(roomName,"--------roomName");
+//     // console.log(messagehere,"---------messagehere");
 
-    // Save the message to the database
-    await newMessage.save();
+//     const messageExist = await messageModel.findOne(
+//       { bookingId: bookingId },
+//       { userId: userId },
+//       { vendorId: vendorId }
+//     );
+//     // console.log(messageExist, "-----here exist");
+//     if (messageExist) {
+//       const newMessage = {
+//         text: message,
+//         sender: sender, // Replace with the sender's ID
+//       };
 
-    res.status(201).json({ message: "Message saved successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to save the message" });
-  }
-};
+//       const updateResult = await messageModel.updateOne(
+//         { bookingId: bookingId },
+//         {
+//           $push: {
+//             messages: newMessage,
+//           },
+//         }
+//       );
+//     } else {
+//       const newMessage = new messageModel({
+//         bookingId: new ObjectId(bookingId), // Replace with the actual Booking ID
+//         userId: new ObjectId(userId), // Replace with the actual User ID
+//         vendorId: new ObjectId(vendorId), // Replace with the actual Vendor ID
+//         room:roomName,
+//         messages: [
+//           {
+//             text: req.body.message,
+//             sender: sender, // Replace with the sender's ID
+//           },
+//           // Add more messages as needed
+//         ],
+//       });
+//       console.log(newMessage,"--new Message");
+
+//       newMessage
+//         .save()
+//         .then((savedMessage) => {
+//           console.log("Message saved:", savedMessage);
+//           // Handle the success case
+//         })
+//         .catch((error) => {
+//           console.error("Error saving message:", error);
+//           // Handle the error case
+//         });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Failed to save the message" });
+//   }
+// };
+
+//for maheendrans frontend in chat:
+// const saveMessages = async (req, res) => {
+//   try {
+//     // console.log(req.body,"-----------req.body-----------");
+//     const { bookingId, userId, vendorId, message, sender } = req.body;
+//     const roomName = `${bookingId}-${userId}-${vendorId}`;
+//     const user=await User.findById(userId);
+//     // console.log(user,"=================");
+//     const userName=user.firstName;
+//     // console.log(userName,"---------userName");
+//     // console.log(roomName,"--------roomName");
+//     // console.log(messagehere,"---------messagehere");
+
+//     const messageExist = await messageModel.findOne(
+//       { bookingId: bookingId },
+//     );
+//     // console.log(messageExist, "-----here exist");
+//     if (messageExist) {
+//       const newMessage = {
+//         text: message,
+//         sender: userName, // Replace with the sender's ID
+//       };
+
+//       const updateResult = await messageModel.updateOne(
+//         { bookingId: bookingId },
+//         {
+//           $push: {
+//             messages: newMessage,
+//           },
+//         }
+//       );
+//     } else {
+//       const newMessage = new messageModel({
+//         bookingId: new ObjectId(bookingId), // Replace with the actual Booking ID
+//         userId: new ObjectId(userId), // Replace with the actual User ID
+//         vendorId: new ObjectId(vendorId), // Replace with the actual Vendor ID
+//         room:roomName,
+//         messages: [
+//           {
+//             text: req.body.message,
+//             sender: userName, // Replace with the sender's ID
+//           },
+//           // Add more messages as needed
+//         ],
+//       });
+//       // console.log(newMessage,"--new Message");
+
+//       newMessage
+//         .save()
+//         .then((savedMessage) => {
+//           console.log("Message saved:", savedMessage);
+//           // Handle the success case
+//         })
+//         .catch((error) => {
+//           console.error("Error saving message:", error);
+//           // Handle the error case
+//         });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Failed to save the message" });
+//   }
+// };
+
+
+// const getMessages = async (req, res) => {
+//   try {
+//     const { bookingId, userId, vendorId } = req.body;
+
+//     // console.log(req.body, "-------?????");
+
+//     const messageList = await messageModel.findOne({ bookingId: bookingId });
+
+//     // console.log(messageList, "------messageList");
+
+//     return res.status(200).json({ message: messageList?.messages,});
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
 
 function isValidObjectIdString(str) {
   // A valid ObjectId is a 24-character hexadecimal string
@@ -1293,7 +1416,8 @@ module.exports = {
   cancelBooking,
   editBooking,
   enterOtptoEndTrip,
-  saveMessages,
+  // saveMessages,
   getWalletBalance,
   sendMessageToOwner,
+  // getMessages,
 };

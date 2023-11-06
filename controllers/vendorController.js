@@ -15,6 +15,7 @@ const { ObjectId } = mongoose.Types;
 const Booking = require("../models/bookingModel");
 const User = require("../models/userModel");
 const Admin = require("../models/adminModel");
+const messageModel = require("../models/messageModel");
 
 const registerVendor = async (req, res) => {
   try {
@@ -1029,6 +1030,149 @@ const getBookingsvsMonthChartInVendor = async (req, res) => {
   }
 };
 
+// const saveMessages = async (req, res) => {
+//   try {
+//     const { bookingId, userId, vendorId, message, sender } = req.body;
+
+//     // console.log(messagehere,"---------messagehere");
+
+//     const messageExist = await messageModel.findOne(
+//       { bookingId: bookingId },
+//       { userId: userId },
+//       { vendorId: vendorId }
+//     );
+//     // console.log(messageExist, "-----here exist");
+//     if (messageExist) {
+//       const newMessage = {
+//         text: message,
+//         sender: sender, // Replace with the sender's ID
+//       };
+
+//       const updateResult = await messageModel.updateOne(
+//         { bookingId: bookingId },
+//         {
+//           $push: {
+//             messages: newMessage,
+//           },
+//         }
+//       );
+//     } else {
+//       const newMessage = new messageModel({
+//         bookingId: new ObjectId(bookingId), // Replace with the actual Booking ID
+//         userId: new ObjectId(userId), // Replace with the actual User ID
+//         vendorId: new ObjectId(vendorId), // Replace with the actual Vendor ID
+//         messages: [
+//           {
+//             text: req.body.message,
+//             sender: sender, // Replace with the sender's ID
+//           },
+//           // Add more messages as needed
+//         ],
+//       });
+//       // console.log(newMessage,"--new Message");
+
+//       newMessage
+//         .save()
+//         .then((savedMessage) => {
+//           console.log("Message saved:", savedMessage);
+//           // Handle the success case
+//         })
+//         .catch((error) => {
+//           console.error("Error saving message:", error);
+//           // Handle the error case
+//         });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Failed to save the message" });
+//   }
+// };
+
+//for maheendrans frontend in chat:
+// const saveMessages = async (req, res) => {
+//   try {
+//     console.log(req.body,"-----------req.body-----------");
+//     const { bookingId, userId, vendorId, message, sender } = req.body;
+//     const roomName = `${bookingId}-${userId}-${vendorId}`;
+//     const vendor=await Vendor.findById(vendorId);
+//     // console.log(user,"=================");
+//     const userName=vendor.firstName;
+//     console.log(userName,"---------userName");
+//     // console.log(roomName,"--------roomName");
+//     // console.log(messagehere,"---------messagehere");
+
+//     const messageExist = await messageModel.findOne(
+//       { bookingId: bookingId },
+//       { userId: userId },
+//       { vendorId: vendorId }
+//     );
+//     // console.log(messageExist, "-----here exist");
+//     if (messageExist) {
+//       const newMessage = {
+//         text: message,
+//         sender: userName, // Replace with the sender's ID
+//       };
+
+//       const updateResult = await messageModel.updateOne(
+//         { bookingId: bookingId },
+//         {
+//           $push: {
+//             messages: newMessage,
+//           },
+//         }
+//       );
+//     } else {
+//       const newMessage = new messageModel({
+//         bookingId: new ObjectId(bookingId), // Replace with the actual Booking ID
+//         userId: new ObjectId(userId), // Replace with the actual User ID
+//         vendorId: new ObjectId(vendorId), // Replace with the actual Vendor ID
+//         room:roomName,
+//         messages: [
+//           {
+//             text: req.body.message,
+//             sender: userName, // Replace with the sender's ID
+//           },
+//           // Add more messages as needed
+//         ],
+//       });
+//       // console.log(newMessage,"--new Message");
+
+//       newMessage
+//         .save()
+//         .then((savedMessage) => {
+//           console.log("Message saved:", savedMessage);
+//           // Handle the success case
+//         })
+//         .catch((error) => {
+//           console.error("Error saving message:", error);
+//           // Handle the error case
+//         });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Failed to save the message" });
+//   }
+// };
+
+// const getMessages = async (req, res) => {
+//   try {
+//     const { bookingId, userId, vendorId } = req.body;
+
+//     // console.log(req.body,"-------?????");
+
+//     const messageList = await messageModel.findOne(
+//       { bookingId: bookingId },
+     
+//     );
+
+//     // console.log(messageList, "------messageList");
+
+//     return res.status(200).json({ message: messageList?.messages });
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
 module.exports = {
   registerVendor,
   verifyOTP,
@@ -1051,6 +1195,8 @@ module.exports = {
   enterOtpToDeliverCar,
   getStatsofVendor,
   getBookingsvsMonthChartInVendor,
+  // getMessages,
+  // saveMessages
 };
 
 
