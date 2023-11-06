@@ -124,7 +124,7 @@ const server1 = server.listen(port, async () => {
 io.on("connection", (socket) => {
   socket.on("listMessages", async (data) => {
     try {
-      const { bookingId, userId, vendorId } = data;
+      const { bookingId } = data;
       // Retrieve messages from MongoDB
       const messages = await messageModel.findOne({ bookingId: bookingId });
 
@@ -194,9 +194,6 @@ io.on("connection", (socket) => {
             // Handle the error case
           });
       }
-
-      // // Emit the messages to the client
-      // socket.emit("messageAdded");
       // Emit the "messageAdded" event to all connected sockets
       io.emit("messageAdded");
     } catch (err) {
