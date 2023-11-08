@@ -256,68 +256,51 @@ const getProfileDetails = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-  // console.log(req.body.profileImage, "------------inside update profile");
+  console.log(req.body, "------------inside update profile");
   const { userId } = req.params;
   // console.log(userId, "from params");
-  console.log();
   const {
-    firstName,
-    lastName,
-    password,
-    mobileNumber,
-    address,
-    pinCode,
-    state,
-    aadharNumber,
-    dlNumber,
-    aadharFrontImage,
-    aadharBackImage,
-    dlFrontImage,
-    dlBackImage,
-    profileImage,
+    formValues
   } = req.body;
-  // console.log(req.body, "-----------req.body..............");
+  console.log(req.body, "-----------req.body..............");
   try {
-    let aadharfrontimage = await cloudinary.v2.uploader.upload(
-      aadharFrontImage
-    );
-    let aadharfrontimageurl = aadharfrontimage.url;
-    // console.log(aadharfrontimageurl, "---------url-----------");
+    if(formValues.aadharFrontImage){
+      let aadharfrontimage = await cloudinary.v2.uploader.upload(
+        formValues.aadharFrontImage
+      );
+      let aadharfrontimageurl = aadharfrontimage.url;
+      formValues.aadharFrontImage=aadharfrontimageurl;
+      // console.log(aadharfrontimageurl, "---------url-----------");
+    }
 
-    let aadharbackimage = await cloudinary.v2.uploader.upload(aadharBackImage);
-    let aadharbackimageurl = aadharbackimage.url;
-    // console.log(aadharbackimageurl, "------aadharbackimageurl------------");
+    if(formValues.aadharBackImage){
+      let aadharbackimage = await cloudinary.v2.uploader.upload(formValues.aadharBackImage);
+      let aadharbackimageurl = aadharbackimage.url;
+      // console.log(aadharbackimageurl, "------aadharbackimageurl------------");
+      formValues.aadharBackImage=aadharbackimageurl;
 
-    let dlfrontimage = await cloudinary.v2.uploader.upload(dlFrontImage);
-    let dlfrontimageurl = dlfrontimage.url;
+    }
 
-    let dlbackimage = await cloudinary.v2.uploader.upload(dlBackImage);
-    let dlbackimageurl = dlbackimage.url;
+    if(formValues.dlBackImage){
+      let dlbackimage = await cloudinary.v2.uploader.upload(formValues.dlBackImage);
+      let dlbackimageurl = dlbackimage.url;
+      formValues.dlBackImage=dlbackimageurl;
+  
+    }
 
-    // let profileimage = await cloudinary.v2.uploader.upload(profileImage);
-    // let profileimageurl = profileimage.url;
+    if(formValues.dlFrontImage){
+      let dlfrontimage = await cloudinary.v2.uploader.upload(formValues.dlFrontImage);
+      let dlfrontimageurl = dlfrontimage.url;
+      formValues.dlFrontImage=dlfrontimageurl;
+    }
 
-    const updatedUser = await User.findByIdAndUpdate(
+
+    const updatedUser=await User.findByIdAndUpdate(
       userId,
-      {
-        firstName,
-        lastName,
-        password,
-        mobileNumber,
-        address,
-        pinCode,
-        state,
-        aadharNumber,
-        dlNumber,
-        aadharFrontImage: aadharfrontimageurl,
-        aadharBackImage: aadharbackimageurl,
-        dlFrontImage: dlfrontimageurl,
-        dlBackImage: dlbackimageurl,
-        // profileImage: profileimageurl,
-      },
-      { new: true }
-    );
-
+      formValues,{
+        new:true
+      }
+    )
     // console.log(updatedUser.profileImage, "--------final check-------");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
@@ -327,6 +310,7 @@ const updateProfile = async (req, res) => {
         .json({ message: "Profile updated successfully", user: updatedUser });
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -334,35 +318,19 @@ const updateProfile = async (req, res) => {
 const updateProfileImage = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(req.body,"-----------------------");
-    const { firstName,
-      lastName,
-      password,
-      mobileNumber,
-      address,
-      pinCode,
-      state,
-      aadharNumber,
-      dlNumber,
-      aadharFrontImage,
-      aadharBackImage,
-      dlFrontImage,
-      dlBackImage,
-      profileImage, } = req.body;
-    console.log(profileImage,"------------base64");
-
-    let profileimage = await cloudinary.v2.uploader.upload(profileImage);
-    let profileimageurl = profileimage.url;
-    console.log(profileimageurl,"-------------cloudinary");
-
-    const updatedUser = await User.findByIdAndUpdate(
+    // console.log(req.body,"-----------------------");
+    const { formValuesforProfileImage } = req.body;
+    if (formValuesforProfileImage.profileImage){
+      let profileimage = await cloudinary.v2.uploader.upload(formValuesforProfileImage.profileImage);
+      let profileimageurl = profileimage.url;
+      formValuesforProfileImage.profileImage=profileimageurl;
+    }
+   const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        profileImage: profileimageurl,
-      },
+      formValuesforProfileImage,
       { new: true }
     );
-    console.log(updatedUser.profileImage, "--------final check-------");
+    // console.log(updatedUser.profileImage, "--------final check-------");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     } else {
@@ -569,44 +537,6 @@ const checkBlockStatus = async (req, res) => {
   }
 };
 
-// const getAllCars=async(req,res)=>{
-//   const allCars = await Car.find({
-//     verificationStatus: "Approved",
-//     blockStatus: false
-//   });
-//   const search=req.query.search;
-//   const fuelTypes=req.query.fuelTypes;
-//   const gearTypes=req.query.gearTypes;
-//   const carTypes=req.query.carTypes;
-//   const sortTypes=req.query.sortTypes;
-//   console.log(fuelTypes,"------fuelTypes-------");
-//   if(fuelTypes){
-//     const fuelTypeCars=await Car.find({fuelType:fuelTypes});
-//     return res.json(fuelTypeCars)
-//   }
-//   if(gearTypes){
-//     const gearTypeCars=await Car.find({gearBoxType:gearTypes});
-//     return res.json(gearTypeCars)
-//   }
-//   if(carTypes){
-//     const carTypeCars=await Car.find({carTypeName:carTypes});
-//     return res.json(carTypeCars)
-//   }
-//   if(sortTypes){
-//     if(sortTypes==="sortPriceLowToHigh"){
-//       const sortedCars=await Car.find({hourlyRentalRate:1});
-//       return res.json(sortedCars);
-//     }
-//     if(sortTypes==="sortPriceHighToLow"){
-//       const sortedCars=await Car.find({hourlyRentalRate:-1});
-//       return res.json(sortedCars);
-//     }
-//   }
-
-//   // console.log(allCars);
-//   return res.json(allCars)
-// }
-
 const getAllCars = async (req, res) => {
   try {
     const {
@@ -644,33 +574,6 @@ const getAllCars = async (req, res) => {
     }
 
     let cars;
-
-    // if (pickupDate && returnDate) {
-    //   // Filter based on availability
-    //   const bookedCarIds = await Booking.aggregate([
-    //     {
-    //       $unwind: '$bookingHistory'
-    //     },
-    //     {
-    //       $match: {
-    //         $and: [
-    //           { 'bookingHistory.pickupDate': { $lte: returnDate } },
-    //           { 'bookingHistory.returnDate': { $gte: pickupDate } },
-    //           { 'bookingHistory.bookingStatus': 'booked' }
-    //         ]
-    //       }
-    //     },
-    //     {
-    //       $group: {
-    //         _id: '$carId'
-    //       }
-    //     }
-    //   ]);
-
-    //   const bookedCarIdsArray = bookedCarIds.map((item) => item._id);
-
-    //   query._id = { $nin: bookedCarIdsArray };
-    // }
 
     if (sortTypes) {
       let sortDirection = 1; // Default to ascending
