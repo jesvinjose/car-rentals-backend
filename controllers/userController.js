@@ -238,6 +238,7 @@ const getProfileDetails = async (req, res) => {
       aadharBackImage: user.aadharBackImage,
       dlFrontImage: user.dlFrontImage,
       dlBackImage: user.dlBackImage,
+      profileImage: user.profileImage,
       walletBalance: user.walletBalance,
       isVerified: user.isVerified,
       blockStatus: user.blockStatus,
@@ -255,9 +256,9 @@ const getProfileDetails = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
-  console.log(req.body, "------------inside update profile");
+  // console.log(req.body.profileImage, "------------inside update profile");
   const { userId } = req.params;
-  console.log(userId, "from params");
+  // console.log(userId, "from params");
   console.log();
   const {
     firstName,
@@ -273,6 +274,7 @@ const updateProfile = async (req, res) => {
     aadharBackImage,
     dlFrontImage,
     dlBackImage,
+    profileImage,
   } = req.body;
   // console.log(req.body, "-----------req.body..............");
   try {
@@ -292,6 +294,9 @@ const updateProfile = async (req, res) => {
     let dlbackimage = await cloudinary.v2.uploader.upload(dlBackImage);
     let dlbackimageurl = dlbackimage.url;
 
+    // let profileimage = await cloudinary.v2.uploader.upload(profileImage);
+    // let profileimageurl = profileimage.url;
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -308,11 +313,12 @@ const updateProfile = async (req, res) => {
         aadharBackImage: aadharbackimageurl,
         dlFrontImage: dlfrontimageurl,
         dlBackImage: dlbackimageurl,
+        // profileImage: profileimageurl,
       },
       { new: true }
     );
 
-    // console.log(updatedUser, "--------final check-------");
+    // console.log(updatedUser.profileImage, "--------final check-------");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     } else {
@@ -322,6 +328,51 @@ const updateProfile = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateProfileImage = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(req.body,"-----------------------");
+    const { firstName,
+      lastName,
+      password,
+      mobileNumber,
+      address,
+      pinCode,
+      state,
+      aadharNumber,
+      dlNumber,
+      aadharFrontImage,
+      aadharBackImage,
+      dlFrontImage,
+      dlBackImage,
+      profileImage, } = req.body;
+    console.log(profileImage,"------------base64");
+
+    let profileimage = await cloudinary.v2.uploader.upload(profileImage);
+    let profileimageurl = profileimage.url;
+    console.log(profileimageurl,"-------------cloudinary");
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        profileImage: profileimageurl,
+      },
+      { new: true }
+    );
+    console.log(updatedUser.profileImage, "--------final check-------");
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    } else {
+      return res
+        .status(200)
+        .json({ message: "Profile updated successfully", user: updatedUser });
+    }
+  } catch (error) {
+    console.error("Error updating profile image:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -586,7 +637,10 @@ const getAllCars = async (req, res) => {
     }
 
     if (search) {
-      query.modelName = search;
+      // query.modelName = search;
+      // query.modelName = { $regex: new RegExp(search, "i") };
+      // Use a case-insensitive regular expression to search for modelName substrings
+      query.modelName = { $regex: new RegExp(`.*${search}.*`, "i") };
     }
 
     let cars;
@@ -680,8 +734,8 @@ const getCarDetails = async (req, res) => {
 const searchAvailableCars = async (req, res) => {
   try {
     const { pickupDate, returnDate } = req.body;
-    console.log(pickupDate, "-----pickupDate");
-    console.log(returnDate, "-----returnDate-----");
+    // console.log(pickupDate, "-----pickupDate");
+    // console.log(returnDate, "-----returnDate-----");
     const bookedCarIds = await Booking.aggregate([
       {
         $unwind: "$bookingHistory",
@@ -701,14 +755,14 @@ const searchAvailableCars = async (req, res) => {
         },
       },
     ]);
-    console.log(bookedCarIds);
+    // console.log(bookedCarIds);
 
     const bookedCarIdsArray = bookedCarIds.map((item) => item._id);
 
     const availableCars = await Car.find({
       _id: { $nin: bookedCarIdsArray },
     });
-    console.log(availableCars.length);
+    // console.log(availableCars.length);
 
     return res.json(availableCars);
   } catch (error) {
@@ -1313,7 +1367,6 @@ const enterOtptoEndTrip = async (req, res) => {
 //   }
 // };
 
-
 // const getMessages = async (req, res) => {
 //   try {
 //     const { bookingId, userId, vendorId } = req.body;
@@ -1397,6 +1450,7 @@ module.exports = {
   verifyUserLogin,
   getProfileDetails,
   updateProfile,
+  updateProfileImage,
   resetPassword,
   verifyOTP4PasswordReset,
   confirmNewPassword,

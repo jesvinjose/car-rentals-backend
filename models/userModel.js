@@ -66,6 +66,9 @@ const userSchema=mongoose.Schema({
     },
     bookingHistory:{
         type:Array
+    },
+    profileImage:{
+        type:String,
     }
     // verificationStatus: {
     //     type: String,

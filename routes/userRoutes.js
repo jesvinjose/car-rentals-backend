@@ -42,6 +42,7 @@ router.post('/check_car_availability',userController.checkAvailability)
 //userprofile
 router.get('/:userId',userController.getProfileDetails)
 router.post('/updateProfile/:userId',auth.verifyUserToken,userController.updateProfile)
+router.post('/updateProfileImage/:userId',auth.verifyUserToken,userController.updateProfileImage)
 
 //middleware to check blockstatus of user in the privateroute
 router.get('/checkBlockStatus/:userId',userController.checkBlockStatus)
