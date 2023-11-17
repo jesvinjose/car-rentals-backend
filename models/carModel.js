@@ -90,6 +90,7 @@ const carSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  distanceToUser: Number,
 });
 
 const Car = mongoose.model("Car", carSchema);

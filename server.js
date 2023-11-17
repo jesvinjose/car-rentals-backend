@@ -31,10 +31,10 @@ connectDB();
 
 app.options("*", cors()); // Enable pre-flight requests for all routes
 // Parse incoming requests with JSON payloads
-app.use(bodyParser.json({ limit: "500mb" })); // Adjust the limit as needed
+app.use(bodyParser.json({ limit: "1000mb" })); // Adjust the limit as needed
 
-app.use(express.json({ limit: "500mb" }));
-app.use(express.urlencoded({ extended: true, limit: "500mb" }));
+app.use(express.json({ limit: "1000mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1000mb" }));
 
 app.use(cors({ origin: true, credentials: true }));
 

@@ -7,7 +7,10 @@ const auth=require('../middlewares/verifyUserToken');
 router.get('/usershome',userController.loadCarousels)
 
 //getallcars
-router.get('/allcars',userController.getAllCars)
+// Update your route to handle both GET and POST requests
+router.route('/allcars')
+  .get(userController.getAllCars)
+  .post(userController.getAllCars);
 
 
 //signup

@@ -20,6 +20,7 @@ const { Mongoose } = require("mongoose");
 // const secretKey = "jesvinjose";
 require("dotenv").config();
 const USER_TOKEN_SECRETKEY = process.env.usertoken_secretKey;
+const axios = require("axios");
 
 const registerUser = async (req, res) => {
   const {
@@ -85,6 +86,46 @@ const registerUser = async (req, res) => {
     // );
   } else {
     res.status(400).json({ message: "This User Already exists" });
+  }
+};
+
+const getProfileDetails = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.find({ _id: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userDetails = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailId: user.emailId,
+      mobileNumber: user.mobileNumber,
+      address: user.address,
+      pinCode: user.pinCode,
+      state: user.state,
+      aadharNumber: user.aadharNumber,
+      dlNumber: user.dlNumber,
+      aadharFrontImage: user.aadharFrontImage,
+      aadharBackImage: user.aadharBackImage,
+      dlFrontImage: user.dlFrontImage,
+      dlBackImage: user.dlBackImage,
+      profileImage: user.profileImage,
+      walletBalance: user.walletBalance,
+      isVerified: user.isVerified,
+      blockStatus: user.blockStatus,
+      createdAt: user.createdAt,
+      verificationStatus: user.verificationStatus,
+    };
+
+    // console.log(userDetails,"inside getProfileDetails");
+
+    res.status(200).json({ message: "success", userDetails: userDetails });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(404).json({ message: "Internal server error" });
   }
 };
 
@@ -215,92 +256,50 @@ const verifyUserLogin = async (req, res) => {
   }
 };
 
-const getProfileDetails = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const userDetails = {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      emailId: user.emailId,
-      mobileNumber: user.mobileNumber,
-      address: user.address,
-      pinCode: user.pinCode,
-      state: user.state,
-      aadharNumber: user.aadharNumber,
-      dlNumber: user.dlNumber,
-      aadharFrontImage: user.aadharFrontImage,
-      aadharBackImage: user.aadharBackImage,
-      dlFrontImage: user.dlFrontImage,
-      dlBackImage: user.dlBackImage,
-      profileImage: user.profileImage,
-      walletBalance: user.walletBalance,
-      isVerified: user.isVerified,
-      blockStatus: user.blockStatus,
-      createdAt: user.createdAt,
-      verificationStatus: user.verificationStatus,
-    };
-
-    // console.log(userDetails,"inside getProfileDetails");
-
-    res.status(200).json({ message: "success", userDetails: userDetails });
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-    res.status(404).json({ message: "Internal server error" });
-  }
-};
-
 const updateProfile = async (req, res) => {
   console.log(req.body, "------------inside update profile");
   const { userId } = req.params;
   // console.log(userId, "from params");
-  const {
-    formValues
-  } = req.body;
+  const { formValues } = req.body;
   console.log(req.body, "-----------req.body..............");
   try {
-    if(formValues.aadharFrontImage){
+    if (formValues.aadharFrontImage) {
       let aadharfrontimage = await cloudinary.v2.uploader.upload(
         formValues.aadharFrontImage
       );
       let aadharfrontimageurl = aadharfrontimage.url;
-      formValues.aadharFrontImage=aadharfrontimageurl;
+      formValues.aadharFrontImage = aadharfrontimageurl;
       // console.log(aadharfrontimageurl, "---------url-----------");
     }
 
-    if(formValues.aadharBackImage){
-      let aadharbackimage = await cloudinary.v2.uploader.upload(formValues.aadharBackImage);
+    if (formValues.aadharBackImage) {
+      let aadharbackimage = await cloudinary.v2.uploader.upload(
+        formValues.aadharBackImage
+      );
       let aadharbackimageurl = aadharbackimage.url;
       // console.log(aadharbackimageurl, "------aadharbackimageurl------------");
-      formValues.aadharBackImage=aadharbackimageurl;
-
+      formValues.aadharBackImage = aadharbackimageurl;
     }
 
-    if(formValues.dlBackImage){
-      let dlbackimage = await cloudinary.v2.uploader.upload(formValues.dlBackImage);
+    if (formValues.dlBackImage) {
+      let dlbackimage = await cloudinary.v2.uploader.upload(
+        formValues.dlBackImage
+      );
       let dlbackimageurl = dlbackimage.url;
-      formValues.dlBackImage=dlbackimageurl;
-  
+      formValues.dlBackImage = dlbackimageurl;
     }
 
-    if(formValues.dlFrontImage){
-      let dlfrontimage = await cloudinary.v2.uploader.upload(formValues.dlFrontImage);
+    if (formValues.dlFrontImage) {
+      let dlfrontimage = await cloudinary.v2.uploader.upload(
+        formValues.dlFrontImage
+      );
       let dlfrontimageurl = dlfrontimage.url;
-      formValues.dlFrontImage=dlfrontimageurl;
+      formValues.dlFrontImage = dlfrontimageurl;
     }
 
-
-    const updatedUser=await User.findByIdAndUpdate(
-      userId,
-      formValues,{
-        new:true
-      }
-    )
+    const updatedUser = await User.findByIdAndUpdate(userId, formValues, {
+      new: true,
+    });
     // console.log(updatedUser.profileImage, "--------final check-------");
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
@@ -320,12 +319,14 @@ const updateProfileImage = async (req, res) => {
     const { userId } = req.params;
     // console.log(req.body,"-----------------------");
     const { formValuesforProfileImage } = req.body;
-    if (formValuesforProfileImage.profileImage){
-      let profileimage = await cloudinary.v2.uploader.upload(formValuesforProfileImage.profileImage);
+    if (formValuesforProfileImage.profileImage) {
+      let profileimage = await cloudinary.v2.uploader.upload(
+        formValuesforProfileImage.profileImage
+      );
       let profileimageurl = profileimage.url;
-      formValuesforProfileImage.profileImage=profileimageurl;
+      formValuesforProfileImage.profileImage = profileimageurl;
     }
-   const updatedUser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
       formValuesforProfileImage,
       { new: true }
@@ -545,9 +546,15 @@ const getAllCars = async (req, res) => {
       gearTypes,
       fuelTypes,
       sortTypes,
-      pickupDate,
-      returnDate,
+      sortTypeForDistance,
     } = req.query;
+
+    let userLatitude, userLongitude;
+
+    if (req.method === "POST" && req.body.userLocation) {
+      userLatitude = req.body.userLocation.userLatitude;
+      userLongitude = req.body.userLocation.userLongitude;
+    }
 
     let query = {
       verificationStatus: "Approved",
@@ -567,30 +574,92 @@ const getAllCars = async (req, res) => {
     }
 
     if (search) {
-      // query.modelName = search;
-      // query.modelName = { $regex: new RegExp(search, "i") };
-      // Use a case-insensitive regular expression to search for modelName substrings
       query.modelName = { $regex: new RegExp(`.*${search}.*`, "i") };
     }
 
     let cars;
 
     if (sortTypes) {
-      let sortDirection = 1; // Default to ascending
+      let sortDirection;
 
       if (sortTypes === "Descending") {
         sortDirection = -1;
+      } else {
+        if (sortTypes === "Ascending") {
+          sortDirection = 1;
+        }
       }
-
       cars = await Car.find(query).sort({ dailyRentalRate: sortDirection });
     } else {
       cars = await Car.find(query);
+    }
+
+    // If sortTypeForDistance is provided, calculate and sort by distance
+    if (sortTypeForDistance === "Ascending" && userLatitude && userLongitude) {
+      const carsWithDistance = await Promise.all(
+        cars.map(async (car) => {
+          const distanceToUser = await calculateDistance(
+            userLatitude,
+            userLongitude,
+            car.carLocation.latitude,
+            car.carLocation.longitude
+          );
+          // console.log(`Distance to ${car.modelName}: ${distanceToUser} km`);
+          return { ...car.toObject(), distanceToUser };
+        })
+      );
+
+      // Sort by distance
+      carsWithDistance.sort((a, b) => a.distanceToUser - b.distanceToUser);
+      return res.json(carsWithDistance);
+    } else if (
+      sortTypeForDistance === "Descending" &&
+      userLatitude &&
+      userLongitude
+    ) {
+      const carsWithDistance = await Promise.all(
+        cars.map(async (car) => {
+          const distanceToUser = await calculateDistance(
+            userLatitude,
+            userLongitude,
+            car.carLocation.latitude,
+            car.carLocation.longitude
+          );
+          console.log(`Distance to ${car.modelName}: ${distanceToUser} km`);
+          return { ...car.toObject(), distanceToUser };
+        })
+      );
+
+      // Sort by distance
+      carsWithDistance.sort((a, b) => b.distanceToUser - a.distanceToUser);
+      return res.json(carsWithDistance);
     }
 
     return res.json(cars);
   } catch (error) {
     console.error("Error fetching cars:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const calculateDistance = async (
+  userLatitude,
+  userLongitude,
+  carLatitude,
+  carLongitude
+) => {
+  const mapboxAccessToken =
+    "pk.eyJ1IjoiamVzdmluam9zZSIsImEiOiJjbG5ha2xmM3AwNWZ1MnFyc3pxczN3aW84In0.1vF_M9hKw9RecdOlyFar2A";
+  const directionsRequest = `https://api.mapbox.com/directions/v5/mapbox/driving/${userLongitude},${userLatitude};${carLongitude},${carLatitude}?access_token=${mapboxAccessToken}`;
+
+  try {
+    const response = await axios.get(directionsRequest);
+    const route = response.data.routes[0];
+    const distanceInKm = route.distance / 1000; // Distance in kilometers
+    return distanceInKm.toFixed(2);
+  } catch (error) {
+    console.error("Error fetching directions:", error);
+    throw error; // Rethrow the error to handle it in the calling function
   }
 };
 
@@ -1376,5 +1445,6 @@ module.exports = {
   // saveMessages,
   getWalletBalance,
   sendMessageToOwner,
+  calculateDistance,
   // getMessages,
 };

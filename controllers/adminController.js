@@ -112,7 +112,7 @@ const addCarousel = async (req, res) => {
           .json({ error: "Error uploading image to Cloudinary" });
       }
     }
-    // console.log(imageUrls, "---------------");
+    console.log(imageUrls, "---------------");
 
     // Create a new carousel instance with image URLs
     const newCarousel = new Carousel({
