@@ -532,11 +532,26 @@ const checkBlockStatus = async (req, res) => {
   const id = req.params.userId;
   const user = await User.findById(id);
   // console.log(user,"check block");
-  if (user.blockStatus === true) {
-    res.json({ message: "user is blocked" });
-  } else {
-    res.json({ message: "user is not blocked" });
+  // if (user.blockStatus === true) {
+  //   res.json({ message: "user is blocked" });
+  // } else {
+  //   res.json({ message: "user is not blocked" });
+  // }
+  if(user){
+    return res.status(200).json({
+      message: "Valid User",
+      firstName: user.firstName,
+      lastName: user.lastName,
+      emailId: user.emailId,
+      userId: user._id,
+      walletBalance: user.walletBalance,
+    });
   }
+  return res.status(200).json({
+    message: "Blocked User",
+    });
+
+
 };
 
 const getAllCars = async (req, res) => {
@@ -590,7 +605,7 @@ const getAllCars = async (req, res) => {
           sortDirection = 1;
         }
       }
-      cars = await Car.find(query).sort({ dailyRentalRate: sortDirection });
+      cars = await Car(query).sort({ dailyRentalRate: sortDirection });
     } else {
       cars = await Car.find(query);
     }
