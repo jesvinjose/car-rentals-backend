@@ -565,6 +565,8 @@ const getAllCars = async (req, res) => {
       sortTypeForDistance,
     } = req.query;
 
+    console.log(req.query);
+
     let userLatitude, userLongitude;
 
     if (req.method === "POST" && req.body.userLocation) {
@@ -605,7 +607,7 @@ const getAllCars = async (req, res) => {
           sortDirection = 1;
         }
       }
-      cars = await Car(query).sort({ dailyRentalRate: sortDirection });
+      cars = await Car.find(query).sort({ dailyRentalRate: sortDirection });
     } else {
       cars = await Car.find(query);
     }
